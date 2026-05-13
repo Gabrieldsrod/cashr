@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,14 +25,22 @@ public class AccountController {
         return ResponseEntity.status(HttpStatus.CREATED).body(accountService.create(request));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<AccountResponse> update(@PathVariable UUID id, @Valid @RequestBody AccountRequest request) {
+        return ResponseEntity.ok(accountService.update(id, request));
+    }
+
     @GetMapping
     public ResponseEntity<List<AccountResponse>> findAll() {
         return ResponseEntity.ok(accountService.findAll());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<AccountResponse> findById(@PathVariable UUID id) {
-        return ResponseEntity.ok(accountService.findById(id));
+    public ResponseEntity<AccountResponse> findById(
+            @PathVariable UUID id,
+            @RequestParam(required = false) LocalDate start,
+            @RequestParam(required = false) LocalDate end) {
+        return ResponseEntity.ok(accountService.findById(id, start, end));
     }
 
     @DeleteMapping("/{id}")
