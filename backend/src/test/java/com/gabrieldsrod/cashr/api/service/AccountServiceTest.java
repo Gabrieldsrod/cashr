@@ -3,11 +3,10 @@ package com.gabrieldsrod.cashr.api.service;
 import com.gabrieldsrod.cashr.api.dto.AccountRequest;
 import com.gabrieldsrod.cashr.api.dto.AccountResponse;
 import com.gabrieldsrod.cashr.api.exception.BusinessException;
-import com.gabrieldsrod.cashr.api.model.Account;
-import com.gabrieldsrod.cashr.api.model.AccountType;
-import com.gabrieldsrod.cashr.api.model.TransactionType;
+import com.gabrieldsrod.cashr.api.model.*;
 import com.gabrieldsrod.cashr.api.repository.AccountRepository;
 import com.gabrieldsrod.cashr.api.repository.TransactionRepository;
+import com.gabrieldsrod.cashr.api.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -32,8 +31,17 @@ class AccountServiceTest {
     @Mock
     private TransactionRepository transactionRepository;
 
+    @Mock
+    private UserRepository userRepository;
+
     @InjectMocks
     private AccountService accountService;
+
+    private final UUID USER_ID = UUID.randomUUID();
+
+    private User buildUser() {
+        return User.builder().id(USER_ID).email("user@test.com").build();
+    }
 
     private Account buildAccount(UUID id) {
         return Account.builder()
@@ -41,6 +49,8 @@ class AccountServiceTest {
                 .name("Nubank")
                 .initialBalance(new BigDecimal("1000.00"))
                 .type(AccountType.CHECKING)
+                .currency(Currency.BRL)
+                .user(buildUser())
                 .build();
     }
 
@@ -49,12 +59,14 @@ class AccountServiceTest {
         request.setName(name);
         request.setInitialBalance(initialBalance);
         request.setType(type);
+        request.setCurrency(Currency.BRL);
+        request.setUserId(USER_ID);
         return request;
     }
 
     private void mockBalanceQueries(UUID id, BigDecimal income, BigDecimal expenses) {
-        when(transactionRepository.sumAmountByAccountIdAndType(id, TransactionType.INCOME)).thenReturn(income);
-        when(transactionRepository.sumAmountByAccountIdAndType(id, TransactionType.EXPENSE)).thenReturn(expenses);
+        when(transactionRepository.sumAmountByAccountIdAndTypeAndStatus(id, TransactionType.INCOME, TransactionStatus.PAID)).thenReturn(income);
+        when(transactionRepository.sumAmountByAccountIdAndTypeAndStatus(id, TransactionType.EXPENSE, TransactionStatus.PAID)).thenReturn(expenses);
     }
 
     // ── create ────────────────────────────────────────────────────────────────
@@ -65,6 +77,7 @@ class AccountServiceTest {
         AccountRequest request = buildRequest("Nubank", new BigDecimal("1000.00"), AccountType.CHECKING);
 
         when(accountRepository.existsByName("Nubank")).thenReturn(false);
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(buildUser()));
         when(accountRepository.save(any(Account.class))).thenReturn(buildAccount(id));
         mockBalanceQueries(id, new BigDecimal("500.00"), new BigDecimal("200.00"));
 
@@ -97,6 +110,7 @@ class AccountServiceTest {
         AccountRequest request = buildRequest("Itaú", new BigDecimal("9999.00"), AccountType.SAVINGS);
 
         when(accountRepository.findById(id)).thenReturn(Optional.of(existing));
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(buildUser()));
         when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
         mockBalanceQueries(id, BigDecimal.ZERO, BigDecimal.ZERO);
 
@@ -142,10 +156,11 @@ class AccountServiceTest {
     void findAll_shouldReturnAllAccountsWithCurrentBalance() {
         UUID id1 = UUID.randomUUID();
         UUID id2 = UUID.randomUUID();
+        User user = buildUser();
 
         when(accountRepository.findAll()).thenReturn(List.of(
-                Account.builder().id(id1).name("Nubank").initialBalance(new BigDecimal("500.00")).type(AccountType.CHECKING).build(),
-                Account.builder().id(id2).name("Carteira").initialBalance(new BigDecimal("100.00")).type(AccountType.CASH).build()
+                Account.builder().id(id1).name("Nubank").initialBalance(new BigDecimal("500.00")).type(AccountType.CHECKING).currency(Currency.BRL).user(user).build(),
+                Account.builder().id(id2).name("Carteira").initialBalance(new BigDecimal("100.00")).type(AccountType.CASH).currency(Currency.BRL).user(user).build()
         ));
         mockBalanceQueries(id1, new BigDecimal("200.00"), new BigDecimal("50.00"));
         mockBalanceQueries(id2, BigDecimal.ZERO, BigDecimal.ZERO);
