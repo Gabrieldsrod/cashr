@@ -29,4 +29,7 @@ public class CreditCardRequest {
 
     @NotNull
     private UUID userId;
+
+    @NotNull
+    private UUID accountId;
 }

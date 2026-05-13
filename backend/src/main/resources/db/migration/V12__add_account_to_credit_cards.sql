@@ -1,0 +1,2 @@
+ALTER TABLE credit_cards
+    ADD COLUMN account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE RESTRICT;

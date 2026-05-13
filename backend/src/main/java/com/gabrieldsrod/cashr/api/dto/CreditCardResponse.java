@@ -17,4 +17,5 @@ public class CreditCardResponse {
     private Integer dueDay;
     private BigDecimal creditLimit;
     private UUID userId;
+    private UUID accountId;
 }

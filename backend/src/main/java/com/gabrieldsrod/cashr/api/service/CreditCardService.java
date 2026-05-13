@@ -3,6 +3,7 @@ package com.gabrieldsrod.cashr.api.service;
 import com.gabrieldsrod.cashr.api.dto.*;
 import com.gabrieldsrod.cashr.api.exception.BusinessException;
 import com.gabrieldsrod.cashr.api.model.*;
+import com.gabrieldsrod.cashr.api.repository.AccountRepository;
 import com.gabrieldsrod.cashr.api.repository.CreditCardRepository;
 import com.gabrieldsrod.cashr.api.repository.TransactionRepository;
 import com.gabrieldsrod.cashr.api.repository.UserRepository;
@@ -22,9 +23,11 @@ public class CreditCardService {
     private final CreditCardRepository creditCardRepository;
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
+    private final AccountRepository accountRepository;
 
     public CreditCardResponse create(CreditCardRequest request) {
         User user = findUser(request.getUserId());
+        Account account = findAccount(request.getAccountId());
 
         if (creditCardRepository.existsByNameAndUserId(request.getName(), user.getId())) {
             throw new BusinessException("Credit card with name '" + request.getName() + "' already exists for this user");
@@ -37,6 +40,7 @@ public class CreditCardService {
                 .dueDay(request.getDueDay())
                 .creditLimit(request.getCreditLimit())
                 .user(user)
+                .account(account)
                 .build();
 
         return toResponse(creditCardRepository.save(creditCard));
@@ -55,6 +59,7 @@ public class CreditCardService {
     public CreditCardResponse update(UUID id, CreditCardRequest request) {
         CreditCard creditCard = findCreditCard(id);
         User user = findUser(request.getUserId());
+        Account account = findAccount(request.getAccountId());
 
         boolean nameChanged = !creditCard.getName().equals(request.getName());
         if (nameChanged && creditCardRepository.existsByNameAndUserId(request.getName(), user.getId())) {
@@ -67,6 +72,7 @@ public class CreditCardService {
         creditCard.setDueDay(request.getDueDay());
         creditCard.setCreditLimit(request.getCreditLimit());
         creditCard.setUser(user);
+        creditCard.setAccount(account);
 
         return toResponse(creditCardRepository.save(creditCard));
     }
@@ -116,6 +122,11 @@ public class CreditCardService {
                 .orElseThrow(() -> new BusinessException("User not found"));
     }
 
+    private Account findAccount(UUID accountId) {
+        return accountRepository.findById(accountId)
+                .orElseThrow(() -> new BusinessException("Account not found"));
+    }
+
     private CreditCardResponse toResponse(CreditCard card) {
         return CreditCardResponse.builder()
                 .id(card.getId())
@@ -125,6 +136,7 @@ public class CreditCardService {
                 .dueDay(card.getDueDay())
                 .creditLimit(card.getCreditLimit())
                 .userId(card.getUser().getId())
+                .accountId(card.getAccount().getId())
                 .build();
     }
 
