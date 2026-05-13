@@ -1,0 +1,25 @@
+package com.gabrieldsrod.cashr.api.dto;
+
+import com.gabrieldsrod.cashr.api.model.TransactionType;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import lombok.Data;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+@Data
+public class TransactionRequest {
+
+    @NotNull
+    private TransactionType type;
+
+    @NotNull
+    @Positive
+    private BigDecimal amount;
+
+    @NotNull
+    private LocalDate date;
+
+    private String description;
+}
