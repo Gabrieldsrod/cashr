@@ -21,4 +21,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     BigDecimal sumAmountByAccountIdAndTypeAndPeriod(UUID accountId, TransactionType type, LocalDate start, LocalDate end);
 
     boolean existsByAccountId(UUID accountId);
+
+    boolean existsByCategoryId(UUID categoryId);
 }

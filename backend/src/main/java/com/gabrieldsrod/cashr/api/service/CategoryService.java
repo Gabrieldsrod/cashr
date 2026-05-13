@@ -2,8 +2,10 @@ package com.gabrieldsrod.cashr.api.service;
 
 import com.gabrieldsrod.cashr.api.dto.CategoryRequest;
 import com.gabrieldsrod.cashr.api.dto.CategoryResponse;
+import com.gabrieldsrod.cashr.api.exception.BusinessException;
 import com.gabrieldsrod.cashr.api.model.Category;
 import com.gabrieldsrod.cashr.api.repository.CategoryRepository;
+import com.gabrieldsrod.cashr.api.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,16 +17,29 @@ import java.util.UUID;
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final TransactionRepository transactionRepository;
 
     public CategoryResponse create(CategoryRequest request) {
+        if (categoryRepository.existsByName(request.getName())) {
+            throw new BusinessException("Category with name '" + request.getName() + "' already exists");
+        }
+
         Category category = Category.builder()
                 .name(request.getName())
                 .description(request.getDescription())
                 .build();
 
-        Category saved = categoryRepository.save(category);
+        return toResponse(categoryRepository.save(category));
+    }
 
-        return toResponse(saved);
+    public CategoryResponse update(UUID id, CategoryRequest request) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+
+        category.setName(request.getName());
+        category.setDescription(request.getDescription());
+
+        return toResponse(categoryRepository.save(category));
     }
 
     public List<CategoryResponse> findAll() {
@@ -41,6 +56,10 @@ public class CategoryService {
     }
 
     public void delete(UUID id) {
+        if (transactionRepository.existsByCategoryId(id)) {
+            throw new BusinessException("Cannot delete category with existing transactions");
+        }
+
         categoryRepository.deleteById(id);
     }
 

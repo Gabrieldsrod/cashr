@@ -2,8 +2,10 @@ package com.gabrieldsrod.cashr.api.service;
 
 import com.gabrieldsrod.cashr.api.dto.CategoryRequest;
 import com.gabrieldsrod.cashr.api.dto.CategoryResponse;
+import com.gabrieldsrod.cashr.api.exception.BusinessException;
 import com.gabrieldsrod.cashr.api.model.Category;
 import com.gabrieldsrod.cashr.api.repository.CategoryRepository;
+import com.gabrieldsrod.cashr.api.repository.TransactionRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -24,22 +26,36 @@ class CategoryServiceTest {
     @Mock
     private CategoryRepository categoryRepository;
 
+    @Mock
+    private TransactionRepository transactionRepository;
+
     @InjectMocks
     private CategoryService categoryService;
 
-    @Test
-    void create_shouldReturnCategoryResponse() {
-        CategoryRequest request = new CategoryRequest();
-        request.setName("Alimentação");
-        request.setDescription("Gastos com comida");
-
-        Category saved = Category.builder()
-                .id(UUID.randomUUID())
+    private Category buildCategory(UUID id) {
+        return Category.builder()
+                .id(id)
                 .name("Alimentação")
                 .description("Gastos com comida")
                 .build();
+    }
 
-        when(categoryRepository.save(any(Category.class))).thenReturn(saved);
+    private CategoryRequest buildRequest(String name, String description) {
+        CategoryRequest request = new CategoryRequest();
+        request.setName(name);
+        request.setDescription(description);
+        return request;
+    }
+
+    // ── create ────────────────────────────────────────────────────────────────
+
+    @Test
+    void create_shouldReturnCategoryResponse() {
+        UUID id = UUID.randomUUID();
+        CategoryRequest request = buildRequest("Alimentação", "Gastos com comida");
+
+        when(categoryRepository.existsByName("Alimentação")).thenReturn(false);
+        when(categoryRepository.save(any(Category.class))).thenReturn(buildCategory(id));
 
         CategoryResponse response = categoryService.create(request);
 
@@ -48,6 +64,65 @@ class CategoryServiceTest {
         assertEquals("Gastos com comida", response.getDescription());
         verify(categoryRepository).save(any(Category.class));
     }
+
+    @Test
+    void create_shouldThrowWhenNameAlreadyExists() {
+        CategoryRequest request = buildRequest("Alimentação", "Gastos com comida");
+
+        when(categoryRepository.existsByName("Alimentação")).thenReturn(true);
+
+        assertThrows(BusinessException.class, () -> categoryService.create(request));
+        verify(categoryRepository, never()).save(any());
+    }
+
+    // ── update ────────────────────────────────────────────────────────────────
+
+    @Test
+    void update_shouldChangeNameAndDescription() {
+        UUID id = UUID.randomUUID();
+        Category existing = buildCategory(id);
+
+        CategoryRequest request = buildRequest("Saúde", "Planos e medicamentos");
+
+        when(categoryRepository.findById(id)).thenReturn(Optional.of(existing));
+        when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        CategoryResponse response = categoryService.update(id, request);
+
+        assertEquals("Saúde", response.getName());
+        assertEquals("Planos e medicamentos", response.getDescription());
+    }
+
+    @Test
+    void update_shouldThrowWhenCategoryNotFound() {
+        UUID id = UUID.randomUUID();
+        when(categoryRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class, () -> categoryService.update(id, buildRequest("X", null)));
+    }
+
+    // ── delete ────────────────────────────────────────────────────────────────
+
+    @Test
+    void delete_shouldThrowWhenCategoryHasTransactions() {
+        UUID id = UUID.randomUUID();
+        when(transactionRepository.existsByCategoryId(id)).thenReturn(true);
+
+        assertThrows(BusinessException.class, () -> categoryService.delete(id));
+        verify(categoryRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void delete_shouldCallRepositoryWhenNoTransactions() {
+        UUID id = UUID.randomUUID();
+        when(transactionRepository.existsByCategoryId(id)).thenReturn(false);
+
+        categoryService.delete(id);
+
+        verify(categoryRepository).deleteById(id);
+    }
+
+    // ── findAll / findById ────────────────────────────────────────────────────
 
     @Test
     void findAll_shouldReturnListOfCategories() {
@@ -68,18 +143,13 @@ class CategoryServiceTest {
     @Test
     void findById_shouldReturnCategoryWhenExists() {
         UUID id = UUID.randomUUID();
-        Category category = Category.builder()
-                .id(id)
-                .name("Saúde")
-                .description("Planos e medicamentos")
-                .build();
 
-        when(categoryRepository.findById(id)).thenReturn(Optional.of(category));
+        when(categoryRepository.findById(id)).thenReturn(Optional.of(buildCategory(id)));
 
         CategoryResponse response = categoryService.findById(id);
 
         assertEquals(id, response.getId());
-        assertEquals("Saúde", response.getName());
+        assertEquals("Alimentação", response.getName());
     }
 
     @Test
@@ -88,14 +158,5 @@ class CategoryServiceTest {
         when(categoryRepository.findById(id)).thenReturn(Optional.empty());
 
         assertThrows(RuntimeException.class, () -> categoryService.findById(id));
-    }
-
-    @Test
-    void delete_shouldCallRepositoryDeleteById() {
-        UUID id = UUID.randomUUID();
-
-        categoryService.delete(id);
-
-        verify(categoryRepository).deleteById(id);
     }
 }
