@@ -5,6 +5,7 @@ import com.gabrieldsrod.cashr.api.model.TransactionStatus;
 import com.gabrieldsrod.cashr.api.model.TransactionType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -21,7 +22,16 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.account.id = :accountId AND t.type = :type AND t.status = :status AND t.competenceDate BETWEEN :start AND :end")
     BigDecimal sumAmountByAccountIdAndTypeAndStatusAndPeriod(UUID accountId, TransactionType type, TransactionStatus status, LocalDate start, LocalDate end);
 
+    @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.category.id = :categoryId AND t.type = :type AND t.status = :status AND t.competenceDate BETWEEN :start AND :end")
+    BigDecimal sumAmountByCategoryIdAndTypeAndStatusAndPeriod(UUID categoryId, TransactionType type, TransactionStatus status, LocalDate start, LocalDate end);
+
     boolean existsByAccountId(UUID accountId);
 
     boolean existsByCategoryId(UUID categoryId);
+
+    @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.account.id = :accountId AND t.type = :type AND t.status = :status AND t.competenceDate < :date")
+    BigDecimal sumAmountByAccountIdAndTypeAndStatusBefore(@Param("accountId") UUID accountId, @Param("type") TransactionType type, @Param("status") TransactionStatus status, @Param("date") LocalDate date);
+
+    @Query("SELECT t FROM Transaction t LEFT JOIN FETCH t.category WHERE t.account.id = :accountId AND t.competenceDate BETWEEN :start AND :end AND (:status IS NULL OR t.status = :status) ORDER BY t.competenceDate ASC")
+    List<Transaction> findStatement(@Param("accountId") UUID accountId, @Param("start") LocalDate start, @Param("end") LocalDate end, @Param("status") TransactionStatus status);
 }

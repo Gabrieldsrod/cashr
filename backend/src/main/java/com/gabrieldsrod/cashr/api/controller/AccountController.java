@@ -2,6 +2,8 @@ package com.gabrieldsrod.cashr.api.controller;
 
 import com.gabrieldsrod.cashr.api.dto.AccountRequest;
 import com.gabrieldsrod.cashr.api.dto.AccountResponse;
+import com.gabrieldsrod.cashr.api.dto.StatementLineResponse;
+import com.gabrieldsrod.cashr.api.model.TransactionStatus;
 import com.gabrieldsrod.cashr.api.service.AccountService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +43,15 @@ public class AccountController {
             @RequestParam(required = false) LocalDate start,
             @RequestParam(required = false) LocalDate end) {
         return ResponseEntity.ok(accountService.findById(id, start, end));
+    }
+
+    @GetMapping("/{id}/statement")
+    public ResponseEntity<List<StatementLineResponse>> getStatement(
+            @PathVariable UUID id,
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate,
+            @RequestParam(required = false) TransactionStatus status) {
+        return ResponseEntity.ok(accountService.getStatement(id, startDate, endDate, status));
     }
 
     @DeleteMapping("/{id}")

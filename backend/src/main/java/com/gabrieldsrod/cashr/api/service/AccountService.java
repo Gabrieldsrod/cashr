@@ -2,8 +2,10 @@ package com.gabrieldsrod.cashr.api.service;
 
 import com.gabrieldsrod.cashr.api.dto.AccountRequest;
 import com.gabrieldsrod.cashr.api.dto.AccountResponse;
+import com.gabrieldsrod.cashr.api.dto.StatementLineResponse;
 import com.gabrieldsrod.cashr.api.exception.BusinessException;
 import com.gabrieldsrod.cashr.api.model.Account;
+import com.gabrieldsrod.cashr.api.model.Transaction;
 import com.gabrieldsrod.cashr.api.model.TransactionStatus;
 import com.gabrieldsrod.cashr.api.model.TransactionType;
 import com.gabrieldsrod.cashr.api.model.User;
@@ -17,6 +19,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 @RequiredArgsConstructor
@@ -69,6 +72,36 @@ public class AccountService {
                 .orElseThrow(() -> new RuntimeException("Account not found"));
 
         return toResponse(account, start, end);
+    }
+
+    public List<StatementLineResponse> getStatement(UUID accountId, LocalDate startDate, LocalDate endDate, TransactionStatus status) {
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+
+        BigDecimal openingIncome = transactionRepository.sumAmountByAccountIdAndTypeAndStatusBefore(accountId, TransactionType.INCOME, TransactionStatus.PAID, startDate);
+        BigDecimal openingExpenses = transactionRepository.sumAmountByAccountIdAndTypeAndStatusBefore(accountId, TransactionType.EXPENSE, TransactionStatus.PAID, startDate);
+        BigDecimal openingBalance = account.getInitialBalance().add(openingIncome).subtract(openingExpenses);
+
+        List<Transaction> transactions = transactionRepository.findStatement(accountId, startDate, endDate, status);
+
+        AtomicReference<BigDecimal> running = new AtomicReference<>(openingBalance);
+        return transactions.stream().map(t -> {
+            BigDecimal next = TransactionType.INCOME.equals(t.getType())
+                    ? running.get().add(t.getAmount())
+                    : running.get().subtract(t.getAmount());
+            running.set(next);
+            return StatementLineResponse.builder()
+                    .id(t.getId())
+                    .type(t.getType())
+                    .amount(t.getAmount())
+                    .competenceDate(t.getCompetenceDate())
+                    .description(t.getDescription())
+                    .status(t.getStatus())
+                    .categoryId(t.getCategory() != null ? t.getCategory().getId() : null)
+                    .categoryName(t.getCategory() != null ? t.getCategory().getName() : null)
+                    .runningBalance(next)
+                    .build();
+        }).toList();
     }
 
     public void delete(UUID id) {
