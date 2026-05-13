@@ -30,7 +30,7 @@ public class AccountService {
     private final UserRepository userRepository;
 
     public AccountResponse create(AccountRequest request) {
-        if (accountRepository.existsByName(request.getName())) {
+        if (accountRepository.existsByNameAndUserId(request.getName(), request.getUserId())) {
             throw new BusinessException("Account with name '" + request.getName() + "' already exists");
         }
 
@@ -57,8 +57,8 @@ public class AccountService {
         return toResponse(accountRepository.save(account));
     }
 
-    public List<AccountResponse> findAll() {
-        return accountRepository.findAll().stream()
+    public List<AccountResponse> findAll(UUID userId) {
+        return accountRepository.findAllByUserId(userId).stream()
                 .map(this::toResponse)
                 .toList();
     }

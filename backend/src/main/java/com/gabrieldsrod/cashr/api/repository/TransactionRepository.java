@@ -14,7 +14,7 @@ import java.util.UUID;
 
 public interface TransactionRepository extends JpaRepository<Transaction, UUID> {
 
-    List<Transaction> findByCompetenceDateBetween(LocalDate start, LocalDate end);
+    List<Transaction> findByUserIdAndCompetenceDateBetween(UUID userId, LocalDate start, LocalDate end);
 
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.account.id = :accountId AND t.type = :type AND t.status = :status")
     BigDecimal sumAmountByAccountIdAndTypeAndStatus(UUID accountId, TransactionType type, TransactionStatus status);
@@ -39,12 +39,14 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     List<Transaction> findByCreditCardAndInvoicePeriod(@Param("creditCardId") UUID creditCardId, @Param("start") LocalDate start, @Param("end") LocalDate end);
 
     @Query("SELECT t FROM Transaction t LEFT JOIN FETCH t.category LEFT JOIN FETCH t.creditCard " +
-           "WHERE (:type IS NULL OR t.type = :type) " +
+           "WHERE t.user.id = :userId " +
+           "AND (:type IS NULL OR t.type = :type) " +
            "AND (:status IS NULL OR t.status = :status) " +
            "AND (:start IS NULL OR t.competenceDate >= :start) " +
            "AND (:end IS NULL OR t.competenceDate <= :end) " +
            "ORDER BY t.competenceDate DESC, t.createdAt DESC")
-    List<Transaction> findWithFilters(@Param("type") TransactionType type,
+    List<Transaction> findWithFilters(@Param("userId") UUID userId,
+                                      @Param("type") TransactionType type,
                                       @Param("status") TransactionStatus status,
                                       @Param("start") LocalDate start,
                                       @Param("end") LocalDate end);

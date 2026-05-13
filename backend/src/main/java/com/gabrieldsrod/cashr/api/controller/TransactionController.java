@@ -29,11 +29,12 @@ public class TransactionController {
 
     @GetMapping
     public ResponseEntity<List<TransactionResponse>> findAll(
+            @RequestParam UUID userId,
             @RequestParam(required = false) TransactionType type,
             @RequestParam(required = false) TransactionStatus status,
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) @Min(1) @Max(12) Integer month) {
-        return ResponseEntity.ok(transactionService.findAll(type, status, year, month));
+        return ResponseEntity.ok(transactionService.findAll(userId, type, status, year, month));
     }
 
     @GetMapping("/{id}")
@@ -58,8 +59,9 @@ public class TransactionController {
 
     @GetMapping("/balance")
     public ResponseEntity<BigDecimal> getMonthlyBalance(
+            @RequestParam UUID userId,
             @RequestParam @Min(2000) @Max(2100) int year,
             @RequestParam @Min(1) @Max(12) int month) {
-        return ResponseEntity.ok(transactionService.getMonthlyBalance(year, month));
+        return ResponseEntity.ok(transactionService.getMonthlyBalance(userId, year, month));
     }
 }

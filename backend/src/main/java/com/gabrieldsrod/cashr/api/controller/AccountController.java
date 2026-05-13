@@ -33,8 +33,8 @@ public class AccountController {
     }
 
     @GetMapping
-    public ResponseEntity<List<AccountResponse>> findAll() {
-        return ResponseEntity.ok(accountService.findAll());
+    public ResponseEntity<List<AccountResponse>> findAll(@RequestParam UUID userId) {
+        return ResponseEntity.ok(accountService.findAll(userId));
     }
 
     @GetMapping("/{id}")

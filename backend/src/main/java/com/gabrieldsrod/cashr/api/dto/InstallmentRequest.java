@@ -1,5 +1,6 @@
 package com.gabrieldsrod.cashr.api.dto;
 
+import com.gabrieldsrod.cashr.api.model.Currency;
 import com.gabrieldsrod.cashr.api.model.PaymentMethod;
 import com.gabrieldsrod.cashr.api.model.TransactionStatus;
 import com.gabrieldsrod.cashr.api.model.TransactionType;
@@ -16,10 +17,16 @@ import java.util.UUID;
 public class InstallmentRequest {
 
     @NotNull
+    private UUID userId;
+
+    @NotNull
     private TransactionType type;
 
     @NotNull
     private TransactionStatus status;
+
+    @NotNull
+    private Currency currency;
 
     @NotNull
     @Positive

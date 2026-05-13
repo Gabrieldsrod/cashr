@@ -30,8 +30,8 @@ public class CategoryController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CategoryResponse>> findAll() {
-        return ResponseEntity.ok(categoryService.findAll());
+    public ResponseEntity<List<CategoryResponse>> findAll(@RequestParam UUID userId) {
+        return ResponseEntity.ok(categoryService.findAll(userId));
     }
 
     @GetMapping("/{id}")

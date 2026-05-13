@@ -10,6 +10,7 @@ import java.util.UUID;
 public class CategoryResponse {
 
     private UUID id;
+    private UUID userId;
     private String name;
     private String description;
     private String color;

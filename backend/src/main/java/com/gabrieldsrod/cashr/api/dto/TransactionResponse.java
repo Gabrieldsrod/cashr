@@ -1,5 +1,6 @@
 package com.gabrieldsrod.cashr.api.dto;
 
+import com.gabrieldsrod.cashr.api.model.Currency;
 import com.gabrieldsrod.cashr.api.model.PaymentMethod;
 import com.gabrieldsrod.cashr.api.model.TransactionStatus;
 import com.gabrieldsrod.cashr.api.model.TransactionType;
@@ -16,8 +17,10 @@ import java.util.UUID;
 public class TransactionResponse {
 
     private UUID id;
+    private UUID userId;
     private TransactionType type;
     private TransactionStatus status;
+    private Currency currency;
     private BigDecimal amount;
     private LocalDate competenceDate;
     private LocalDateTime createdAt;

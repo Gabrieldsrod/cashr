@@ -7,6 +7,7 @@ import com.gabrieldsrod.cashr.api.model.*;
 import com.gabrieldsrod.cashr.api.repository.CategoryRepository;
 import com.gabrieldsrod.cashr.api.repository.CreditCardRepository;
 import com.gabrieldsrod.cashr.api.repository.TransactionRepository;
+import com.gabrieldsrod.cashr.api.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -25,11 +26,15 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final CategoryRepository categoryRepository;
     private final CreditCardRepository creditCardRepository;
+    private final UserRepository userRepository;
 
     public TransactionResponse create(TransactionRequest request) {
         if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Amount must be positive");
         }
+
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new BusinessException("User not found"));
 
         Category category = null;
         if (request.getCategoryId() != null) {
@@ -50,8 +55,10 @@ public class TransactionService {
         }
 
         Transaction transaction = Transaction.builder()
+                .user(user)
                 .type(request.getType())
                 .status(request.getStatus())
+                .currency(request.getCurrency())
                 .amount(request.getAmount())
                 .competenceDate(request.getCompetenceDate())
                 .description(request.getDescription())
@@ -70,7 +77,7 @@ public class TransactionService {
         return toResponse(transaction);
     }
 
-    public List<TransactionResponse> findAll(TransactionType type, TransactionStatus status, Integer year, Integer month) {
+    public List<TransactionResponse> findAll(UUID userId, TransactionType type, TransactionStatus status, Integer year, Integer month) {
         LocalDate start = null;
         LocalDate end = null;
         if (year != null && month != null) {
@@ -78,7 +85,7 @@ public class TransactionService {
             start = ym.atDay(1);
             end = ym.atEndOfMonth();
         }
-        return transactionRepository.findWithFilters(type, status, start, end)
+        return transactionRepository.findWithFilters(userId, type, status, start, end)
                 .stream().map(this::toResponse).toList();
     }
 
@@ -88,6 +95,9 @@ public class TransactionService {
     }
 
     public List<TransactionResponse> createInstallments(InstallmentRequest request) {
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new BusinessException("User not found"));
+
         Category category = null;
         if (request.getCategoryId() != null) {
             category = categoryRepository.findById(request.getCategoryId())
@@ -118,8 +128,10 @@ public class TransactionService {
             }
 
             transactions.add(Transaction.builder()
+                    .user(user)
                     .type(request.getType())
                     .status(request.getStatus())
+                    .currency(request.getCurrency())
                     .amount(installmentAmount)
                     .competenceDate(competenceDate)
                     .description(request.getDescription())
@@ -138,12 +150,12 @@ public class TransactionService {
                 .toList();
     }
 
-    public BigDecimal getMonthlyBalance(int year, int month) {
+    public BigDecimal getMonthlyBalance(UUID userId, int year, int month) {
         YearMonth yearMonth = YearMonth.of(year, month);
         LocalDate start = yearMonth.atDay(1);
         LocalDate end = yearMonth.atEndOfMonth();
 
-        List<Transaction> transactions = transactionRepository.findByCompetenceDateBetween(start, end);
+        List<Transaction> transactions = transactionRepository.findByUserIdAndCompetenceDateBetween(userId, start, end);
 
         BigDecimal income = transactions.stream()
                 .filter(t -> t.getType() == TransactionType.INCOME)
@@ -174,6 +186,7 @@ public class TransactionService {
             Category cat = transaction.getCategory();
             categoryResponse = CategoryResponse.builder()
                     .id(cat.getId())
+                    .userId(cat.getUser().getId())
                     .name(cat.getName())
                     .description(cat.getDescription())
                     .build();
@@ -195,8 +208,10 @@ public class TransactionService {
 
         return TransactionResponse.builder()
                 .id(transaction.getId())
+                .userId(transaction.getUser().getId())
                 .type(transaction.getType())
                 .status(transaction.getStatus())
+                .currency(transaction.getCurrency())
                 .amount(transaction.getAmount())
                 .competenceDate(transaction.getCompetenceDate())
                 .createdAt(transaction.getCreatedAt())
