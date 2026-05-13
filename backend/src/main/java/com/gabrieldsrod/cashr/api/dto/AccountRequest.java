@@ -1,6 +1,7 @@
 package com.gabrieldsrod.cashr.api.dto;
 
 import com.gabrieldsrod.cashr.api.model.AccountType;
+import com.gabrieldsrod.cashr.api.model.Currency;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -20,4 +21,7 @@ public class AccountRequest {
 
     @NotNull
     private AccountType type;
+
+    @NotNull
+    private Currency currency;
 }

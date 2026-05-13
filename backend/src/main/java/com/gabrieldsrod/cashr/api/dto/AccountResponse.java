@@ -1,6 +1,7 @@
 package com.gabrieldsrod.cashr.api.dto;
 
 import com.gabrieldsrod.cashr.api.model.AccountType;
+import com.gabrieldsrod.cashr.api.model.Currency;
 import lombok.Builder;
 import lombok.Data;
 
@@ -12,8 +13,10 @@ import java.util.UUID;
 public class AccountResponse {
 
     private UUID id;
+    private UUID userId;
     private String name;
     private BigDecimal initialBalance;
     private BigDecimal currentBalance;
     private AccountType type;
+    private Currency currency;
 }
