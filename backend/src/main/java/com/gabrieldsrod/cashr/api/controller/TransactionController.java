@@ -10,6 +10,10 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -28,13 +32,14 @@ public class TransactionController {
     private final TransactionService transactionService;
 
     @GetMapping
-    public ResponseEntity<List<TransactionResponse>> findAll(
+    public ResponseEntity<Page<TransactionResponse>> findAll(
             @RequestParam UUID userId,
             @RequestParam(required = false) TransactionType type,
             @RequestParam(required = false) TransactionStatus status,
             @RequestParam(required = false) Integer year,
-            @RequestParam(required = false) @Min(1) @Max(12) Integer month) {
-        return ResponseEntity.ok(transactionService.findAll(userId, type, status, year, month));
+            @RequestParam(required = false) @Min(1) @Max(12) Integer month,
+            @PageableDefault(size = 20, sort = "competenceDate", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(transactionService.findAll(userId, type, status, year, month, pageable));
     }
 
     @GetMapping("/{id}")

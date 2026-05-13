@@ -3,6 +3,8 @@ package com.gabrieldsrod.cashr.api.repository;
 import com.gabrieldsrod.cashr.api.model.Transaction;
 import com.gabrieldsrod.cashr.api.model.TransactionStatus;
 import com.gabrieldsrod.cashr.api.model.TransactionType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -38,18 +40,24 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     @Query("SELECT t FROM Transaction t LEFT JOIN FETCH t.category WHERE t.creditCard.id = :creditCardId AND t.invoiceDate BETWEEN :start AND :end ORDER BY t.competenceDate ASC")
     List<Transaction> findByCreditCardAndInvoicePeriod(@Param("creditCardId") UUID creditCardId, @Param("start") LocalDate start, @Param("end") LocalDate end);
 
-    @Query("SELECT t FROM Transaction t LEFT JOIN FETCH t.category LEFT JOIN FETCH t.creditCard " +
-           "WHERE t.user.id = :userId " +
-           "AND (:type IS NULL OR t.type = :type) " +
-           "AND (:status IS NULL OR t.status = :status) " +
-           "AND (:start IS NULL OR t.competenceDate >= :start) " +
-           "AND (:end IS NULL OR t.competenceDate <= :end) " +
-           "ORDER BY t.competenceDate DESC, t.createdAt DESC")
-    List<Transaction> findWithFilters(@Param("userId") UUID userId,
+    @Query(value = "SELECT t FROM Transaction t LEFT JOIN FETCH t.category LEFT JOIN FETCH t.creditCard " +
+                   "WHERE t.user.id = :userId " +
+                   "AND (:type IS NULL OR t.type = :type) " +
+                   "AND (:status IS NULL OR t.status = :status) " +
+                   "AND (:start IS NULL OR t.competenceDate >= :start) " +
+                   "AND (:end IS NULL OR t.competenceDate <= :end)",
+           countQuery = "SELECT COUNT(t) FROM Transaction t " +
+                        "WHERE t.user.id = :userId " +
+                        "AND (:type IS NULL OR t.type = :type) " +
+                        "AND (:status IS NULL OR t.status = :status) " +
+                        "AND (:start IS NULL OR t.competenceDate >= :start) " +
+                        "AND (:end IS NULL OR t.competenceDate <= :end)")
+    Page<Transaction> findWithFilters(@Param("userId") UUID userId,
                                       @Param("type") TransactionType type,
                                       @Param("status") TransactionStatus status,
                                       @Param("start") LocalDate start,
-                                      @Param("end") LocalDate end);
+                                      @Param("end") LocalDate end,
+                                      Pageable pageable);
 
     List<Transaction> findByInstallmentGroupIdOrderByInstallmentNumberAsc(UUID installmentGroupId);
 }

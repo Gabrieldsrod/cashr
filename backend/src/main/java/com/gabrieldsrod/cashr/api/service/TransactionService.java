@@ -5,6 +5,8 @@ import com.gabrieldsrod.cashr.api.dto.request.TransactionRequest;
 import com.gabrieldsrod.cashr.api.dto.response.CategoryResponse;
 import com.gabrieldsrod.cashr.api.dto.response.CreditCardResponse;
 import com.gabrieldsrod.cashr.api.dto.response.TransactionResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import com.gabrieldsrod.cashr.api.exception.BusinessException;
 import com.gabrieldsrod.cashr.api.model.*;
 import com.gabrieldsrod.cashr.api.repository.CategoryRepository;
@@ -80,7 +82,7 @@ public class TransactionService {
         return toResponse(transaction);
     }
 
-    public List<TransactionResponse> findAll(UUID userId, TransactionType type, TransactionStatus status, Integer year, Integer month) {
+    public Page<TransactionResponse> findAll(UUID userId, TransactionType type, TransactionStatus status, Integer year, Integer month, Pageable pageable) {
         LocalDate start = null;
         LocalDate end = null;
         if (year != null && month != null) {
@@ -88,8 +90,8 @@ public class TransactionService {
             start = ym.atDay(1);
             end = ym.atEndOfMonth();
         }
-        return transactionRepository.findWithFilters(userId, type, status, start, end)
-                .stream().map(this::toResponse).toList();
+        return transactionRepository.findWithFilters(userId, type, status, start, end, pageable)
+                .map(this::toResponse);
     }
 
     public List<TransactionResponse> findByInstallmentGroup(UUID groupId) {
