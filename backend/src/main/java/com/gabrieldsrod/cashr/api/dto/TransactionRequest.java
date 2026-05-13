@@ -24,7 +24,7 @@ public class TransactionRequest {
     private BigDecimal amount;
 
     @NotNull
-    private LocalDate date;
+    private LocalDate competenceDate;
 
     private String description;
 

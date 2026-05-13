@@ -38,7 +38,7 @@ public class TransactionService {
                 .type(request.getType())
                 .status(request.getStatus())
                 .amount(request.getAmount())
-                .date(request.getDate())
+                .competenceDate(request.getCompetenceDate())
                 .description(request.getDescription())
                 .category(category)
                 .build();
@@ -53,7 +53,7 @@ public class TransactionService {
         LocalDate start = yearMonth.atDay(1);
         LocalDate end = yearMonth.atEndOfMonth();
 
-        List<Transaction> transactions = transactionRepository.findByDateBetween(start, end);
+        List<Transaction> transactions = transactionRepository.findByCompetenceDateBetween(start, end);
 
         BigDecimal income = transactions.stream()
                 .filter(t -> t.getType() == TransactionType.INCOME)
@@ -84,7 +84,8 @@ public class TransactionService {
                 .type(transaction.getType())
                 .status(transaction.getStatus())
                 .amount(transaction.getAmount())
-                .date(transaction.getDate())
+                .competenceDate(transaction.getCompetenceDate())
+                .createdAt(transaction.getCreatedAt())
                 .description(transaction.getDescription())
                 .category(categoryResponse)
                 .build();

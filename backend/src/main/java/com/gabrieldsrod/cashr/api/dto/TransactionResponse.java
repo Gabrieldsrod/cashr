@@ -7,6 +7,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
@@ -17,7 +18,8 @@ public class TransactionResponse {
     private TransactionType type;
     private TransactionStatus status;
     private BigDecimal amount;
-    private LocalDate date;
+    private LocalDate competenceDate;
+    private LocalDateTime createdAt;
     private String description;
     private CategoryResponse category;
 }
