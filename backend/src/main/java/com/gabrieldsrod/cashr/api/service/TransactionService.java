@@ -36,6 +36,7 @@ public class TransactionService {
 
         Transaction transaction = Transaction.builder()
                 .type(request.getType())
+                .status(request.getStatus())
                 .amount(request.getAmount())
                 .date(request.getDate())
                 .description(request.getDescription())
@@ -81,6 +82,7 @@ public class TransactionService {
         return TransactionResponse.builder()
                 .id(transaction.getId())
                 .type(transaction.getType())
+                .status(transaction.getStatus())
                 .amount(transaction.getAmount())
                 .date(transaction.getDate())
                 .description(transaction.getDescription())

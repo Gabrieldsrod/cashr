@@ -1,5 +1,6 @@
 package com.gabrieldsrod.cashr.api.dto;
 
+import com.gabrieldsrod.cashr.api.model.TransactionStatus;
 import com.gabrieldsrod.cashr.api.model.TransactionType;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -14,6 +15,9 @@ public class TransactionRequest {
 
     @NotNull
     private TransactionType type;
+
+    @NotNull
+    private TransactionStatus status;
 
     @NotNull
     @Positive

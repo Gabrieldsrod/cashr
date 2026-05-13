@@ -1,5 +1,6 @@
 package com.gabrieldsrod.cashr.api.dto;
 
+import com.gabrieldsrod.cashr.api.model.TransactionStatus;
 import com.gabrieldsrod.cashr.api.model.TransactionType;
 import lombok.Builder;
 import lombok.Data;
@@ -14,6 +15,7 @@ public class TransactionResponse {
 
     private UUID id;
     private TransactionType type;
+    private TransactionStatus status;
     private BigDecimal amount;
     private LocalDate date;
     private String description;
