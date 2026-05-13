@@ -1,5 +1,6 @@
 package com.gabrieldsrod.cashr.api.dto;
 
+import com.gabrieldsrod.cashr.api.model.PaymentMethod;
 import com.gabrieldsrod.cashr.api.model.TransactionStatus;
 import com.gabrieldsrod.cashr.api.model.TransactionType;
 import jakarta.validation.constraints.NotNull;
@@ -30,4 +31,8 @@ public class TransactionRequest {
 
     @NotNull
     private UUID categoryId;
+
+    private PaymentMethod paymentMethod;
+
+    private UUID creditCardId;
 }

@@ -1,5 +1,6 @@
 package com.gabrieldsrod.cashr.api.dto;
 
+import com.gabrieldsrod.cashr.api.model.PaymentMethod;
 import com.gabrieldsrod.cashr.api.model.TransactionStatus;
 import com.gabrieldsrod.cashr.api.model.TransactionType;
 import lombok.Builder;
@@ -22,4 +23,7 @@ public class TransactionResponse {
     private LocalDateTime createdAt;
     private String description;
     private CategoryResponse category;
+    private PaymentMethod paymentMethod;
+    private CreditCardResponse creditCard;
+    private LocalDate invoiceDate;
 }

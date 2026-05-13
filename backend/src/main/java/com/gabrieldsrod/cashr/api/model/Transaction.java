@@ -56,6 +56,12 @@ public class Transaction {
     @Column(columnDefinition = "payment_method")
     private PaymentMethod paymentMethod;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "credit_card_id")
+    private CreditCard creditCard;
+
+    private LocalDate invoiceDate;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "transaction_tags",
