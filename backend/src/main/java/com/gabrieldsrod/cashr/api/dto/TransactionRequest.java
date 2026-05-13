@@ -7,6 +7,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Data
 public class TransactionRequest {
@@ -22,4 +23,7 @@ public class TransactionRequest {
     private LocalDate date;
 
     private String description;
+
+    @NotNull
+    private UUID categoryId;
 }

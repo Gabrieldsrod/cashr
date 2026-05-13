@@ -33,4 +33,8 @@ public class Transaction {
     private LocalDate date;
 
     private String description;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
 }

@@ -17,4 +17,5 @@ public class TransactionResponse {
     private BigDecimal amount;
     private LocalDate date;
     private String description;
+    private CategoryResponse category;
 }
