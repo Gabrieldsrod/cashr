@@ -62,6 +62,10 @@ public class Transaction {
 
     private LocalDate invoiceDate;
 
+    private UUID installmentGroupId;
+    private Integer installmentNumber;
+    private Integer totalInstallments;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "transaction_tags",

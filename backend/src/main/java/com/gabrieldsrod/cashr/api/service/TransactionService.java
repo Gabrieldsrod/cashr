@@ -1,9 +1,7 @@
 package com.gabrieldsrod.cashr.api.service;
 
-import com.gabrieldsrod.cashr.api.dto.CategoryResponse;
-import com.gabrieldsrod.cashr.api.dto.CreditCardResponse;
-import com.gabrieldsrod.cashr.api.dto.TransactionRequest;
-import com.gabrieldsrod.cashr.api.dto.TransactionResponse;
+import com.gabrieldsrod.cashr.api.dto.*;
+
 import com.gabrieldsrod.cashr.api.exception.BusinessException;
 import com.gabrieldsrod.cashr.api.model.*;
 import com.gabrieldsrod.cashr.api.repository.CategoryRepository;
@@ -13,9 +11,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -61,6 +62,80 @@ public class TransactionService {
                 .build();
 
         return toResponse(transactionRepository.save(transaction));
+    }
+
+    public TransactionResponse findById(UUID id) {
+        Transaction transaction = transactionRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Transaction not found"));
+        return toResponse(transaction);
+    }
+
+    public List<TransactionResponse> findAll(TransactionType type, TransactionStatus status, Integer year, Integer month) {
+        LocalDate start = null;
+        LocalDate end = null;
+        if (year != null && month != null) {
+            YearMonth ym = YearMonth.of(year, month);
+            start = ym.atDay(1);
+            end = ym.atEndOfMonth();
+        }
+        return transactionRepository.findWithFilters(type, status, start, end)
+                .stream().map(this::toResponse).toList();
+    }
+
+    public List<TransactionResponse> findByInstallmentGroup(UUID groupId) {
+        return transactionRepository.findByInstallmentGroupIdOrderByInstallmentNumberAsc(groupId)
+                .stream().map(this::toResponse).toList();
+    }
+
+    public List<TransactionResponse> createInstallments(InstallmentRequest request) {
+        Category category = null;
+        if (request.getCategoryId() != null) {
+            category = categoryRepository.findById(request.getCategoryId())
+                    .orElseThrow(() -> new RuntimeException("Category not found"));
+        }
+
+        CreditCard creditCard = null;
+        if (PaymentMethod.CREDIT_CARD.equals(request.getPaymentMethod())) {
+            if (request.getCreditCardId() == null) {
+                throw new BusinessException("creditCardId is required for credit card transactions");
+            }
+            creditCard = creditCardRepository.findById(request.getCreditCardId())
+                    .orElseThrow(() -> new BusinessException("Credit card not found"));
+        }
+
+        int total = request.getTotalInstallments();
+        BigDecimal installmentAmount = request.getAmount()
+                .divide(BigDecimal.valueOf(total), 2, RoundingMode.HALF_UP);
+
+        UUID groupId = UUID.randomUUID();
+        List<Transaction> transactions = new ArrayList<>();
+
+        for (int i = 1; i <= total; i++) {
+            LocalDate competenceDate = request.getCompetenceDate().plusMonths(i - 1);
+            LocalDate invoiceDate = null;
+            if (creditCard != null) {
+                invoiceDate = calculateInvoiceDate(competenceDate, creditCard);
+            }
+
+            transactions.add(Transaction.builder()
+                    .type(request.getType())
+                    .status(request.getStatus())
+                    .amount(installmentAmount)
+                    .competenceDate(competenceDate)
+                    .description(request.getDescription())
+                    .category(category)
+                    .paymentMethod(request.getPaymentMethod())
+                    .creditCard(creditCard)
+                    .invoiceDate(invoiceDate)
+                    .installmentGroupId(groupId)
+                    .installmentNumber(i)
+                    .totalInstallments(total)
+                    .build());
+        }
+
+        return transactionRepository.saveAll(transactions).stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     public BigDecimal getMonthlyBalance(int year, int month) {
@@ -130,6 +205,9 @@ public class TransactionService {
                 .paymentMethod(transaction.getPaymentMethod())
                 .creditCard(creditCardResponse)
                 .invoiceDate(transaction.getInvoiceDate())
+                .installmentGroupId(transaction.getInstallmentGroupId())
+                .installmentNumber(transaction.getInstallmentNumber())
+                .totalInstallments(transaction.getTotalInstallments())
                 .build();
     }
 }
