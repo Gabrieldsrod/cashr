@@ -4,6 +4,7 @@ import com.gabrieldsrod.cashr.api.dto.AccountRequest;
 import com.gabrieldsrod.cashr.api.dto.AccountResponse;
 import com.gabrieldsrod.cashr.api.exception.BusinessException;
 import com.gabrieldsrod.cashr.api.model.Account;
+import com.gabrieldsrod.cashr.api.model.TransactionStatus;
 import com.gabrieldsrod.cashr.api.model.TransactionType;
 import com.gabrieldsrod.cashr.api.model.User;
 import com.gabrieldsrod.cashr.api.repository.AccountRepository;
@@ -88,11 +89,11 @@ public class AccountService {
         BigDecimal expenses;
 
         if (start != null && end != null) {
-            income = transactionRepository.sumAmountByAccountIdAndTypeAndPeriod(accountId, TransactionType.INCOME, start, end);
-            expenses = transactionRepository.sumAmountByAccountIdAndTypeAndPeriod(accountId, TransactionType.EXPENSE, start, end);
+            income = transactionRepository.sumAmountByAccountIdAndTypeAndStatusAndPeriod(accountId, TransactionType.INCOME, TransactionStatus.PAID, start, end);
+            expenses = transactionRepository.sumAmountByAccountIdAndTypeAndStatusAndPeriod(accountId, TransactionType.EXPENSE, TransactionStatus.PAID, start, end);
         } else {
-            income = transactionRepository.sumAmountByAccountIdAndType(accountId, TransactionType.INCOME);
-            expenses = transactionRepository.sumAmountByAccountIdAndType(accountId, TransactionType.EXPENSE);
+            income = transactionRepository.sumAmountByAccountIdAndTypeAndStatus(accountId, TransactionType.INCOME, TransactionStatus.PAID);
+            expenses = transactionRepository.sumAmountByAccountIdAndTypeAndStatus(accountId, TransactionType.EXPENSE, TransactionStatus.PAID);
         }
 
         return initialBalance.add(income).subtract(expenses);
