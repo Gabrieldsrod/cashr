@@ -34,4 +34,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
 
     @Query("SELECT t FROM Transaction t LEFT JOIN FETCH t.category WHERE t.account.id = :accountId AND t.competenceDate BETWEEN :start AND :end AND (:status IS NULL OR t.status = :status) ORDER BY t.competenceDate ASC")
     List<Transaction> findStatement(@Param("accountId") UUID accountId, @Param("start") LocalDate start, @Param("end") LocalDate end, @Param("status") TransactionStatus status);
+
+    @Query("SELECT t FROM Transaction t LEFT JOIN FETCH t.category WHERE t.creditCard.id = :creditCardId AND t.invoiceDate BETWEEN :start AND :end ORDER BY t.competenceDate ASC")
+    List<Transaction> findByCreditCardAndInvoicePeriod(@Param("creditCardId") UUID creditCardId, @Param("start") LocalDate start, @Param("end") LocalDate end);
 }

@@ -1,15 +1,17 @@
 package com.gabrieldsrod.cashr.api.service;
 
-import com.gabrieldsrod.cashr.api.dto.CreditCardRequest;
-import com.gabrieldsrod.cashr.api.dto.CreditCardResponse;
+import com.gabrieldsrod.cashr.api.dto.*;
 import com.gabrieldsrod.cashr.api.exception.BusinessException;
-import com.gabrieldsrod.cashr.api.model.CreditCard;
-import com.gabrieldsrod.cashr.api.model.User;
+import com.gabrieldsrod.cashr.api.model.*;
 import com.gabrieldsrod.cashr.api.repository.CreditCardRepository;
+import com.gabrieldsrod.cashr.api.repository.TransactionRepository;
 import com.gabrieldsrod.cashr.api.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,6 +20,7 @@ import java.util.UUID;
 public class CreditCardService {
 
     private final CreditCardRepository creditCardRepository;
+    private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
 
     public CreditCardResponse create(CreditCardRequest request) {
@@ -73,6 +76,36 @@ public class CreditCardService {
         creditCardRepository.deleteById(id);
     }
 
+    public InvoiceResponse getInvoice(UUID creditCardId, int year, int month) {
+        CreditCard card = findCreditCard(creditCardId);
+        CreditCardResponse cardResponse = toResponse(card);
+
+        YearMonth yearMonth = YearMonth.of(year, month);
+        LocalDate start = yearMonth.atDay(1);
+        LocalDate end = yearMonth.atEndOfMonth();
+
+        List<Transaction> transactions = transactionRepository.findByCreditCardAndInvoicePeriod(creditCardId, start, end);
+
+        BigDecimal total = transactions.stream()
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        LocalDate invoiceDate = transactions.isEmpty()
+                ? yearMonth.atDay(Math.min(card.getDueDay(), yearMonth.lengthOfMonth()))
+                : transactions.get(0).getInvoiceDate();
+
+        List<TransactionResponse> transactionResponses = transactions.stream()
+                .map(this::toTransactionResponse)
+                .toList();
+
+        return InvoiceResponse.builder()
+                .creditCard(cardResponse)
+                .invoiceDate(invoiceDate)
+                .totalAmount(total)
+                .transactions(transactionResponses)
+                .build();
+    }
+
     private CreditCard findCreditCard(UUID id) {
         return creditCardRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("Credit card not found"));
@@ -92,6 +125,30 @@ public class CreditCardService {
                 .dueDay(card.getDueDay())
                 .creditLimit(card.getCreditLimit())
                 .userId(card.getUser().getId())
+                .build();
+    }
+
+    private TransactionResponse toTransactionResponse(Transaction t) {
+        CategoryResponse categoryResponse = null;
+        if (t.getCategory() != null) {
+            categoryResponse = CategoryResponse.builder()
+                    .id(t.getCategory().getId())
+                    .name(t.getCategory().getName())
+                    .description(t.getCategory().getDescription())
+                    .build();
+        }
+
+        return TransactionResponse.builder()
+                .id(t.getId())
+                .type(t.getType())
+                .status(t.getStatus())
+                .amount(t.getAmount())
+                .competenceDate(t.getCompetenceDate())
+                .createdAt(t.getCreatedAt())
+                .description(t.getDescription())
+                .category(categoryResponse)
+                .paymentMethod(t.getPaymentMethod())
+                .invoiceDate(t.getInvoiceDate())
                 .build();
     }
 }
