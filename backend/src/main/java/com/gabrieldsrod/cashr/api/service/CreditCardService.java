@@ -1,6 +1,10 @@
 package com.gabrieldsrod.cashr.api.service;
 
-import com.gabrieldsrod.cashr.api.dto.*;
+import com.gabrieldsrod.cashr.api.dto.request.CreditCardRequest;
+import com.gabrieldsrod.cashr.api.dto.response.CategoryResponse;
+import com.gabrieldsrod.cashr.api.dto.response.CreditCardResponse;
+import com.gabrieldsrod.cashr.api.dto.response.InvoiceResponse;
+import com.gabrieldsrod.cashr.api.dto.response.TransactionResponse;
 import com.gabrieldsrod.cashr.api.exception.BusinessException;
 import com.gabrieldsrod.cashr.api.model.*;
 import com.gabrieldsrod.cashr.api.repository.AccountRepository;

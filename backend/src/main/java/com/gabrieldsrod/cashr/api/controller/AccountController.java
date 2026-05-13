@@ -1,8 +1,8 @@
 package com.gabrieldsrod.cashr.api.controller;
 
-import com.gabrieldsrod.cashr.api.dto.AccountRequest;
-import com.gabrieldsrod.cashr.api.dto.AccountResponse;
-import com.gabrieldsrod.cashr.api.dto.StatementLineResponse;
+import com.gabrieldsrod.cashr.api.dto.request.AccountRequest;
+import com.gabrieldsrod.cashr.api.dto.response.AccountResponse;
+import com.gabrieldsrod.cashr.api.dto.request.StatementLineResponse;
 import com.gabrieldsrod.cashr.api.model.TransactionStatus;
 import com.gabrieldsrod.cashr.api.service.AccountService;
 import jakarta.validation.Valid;

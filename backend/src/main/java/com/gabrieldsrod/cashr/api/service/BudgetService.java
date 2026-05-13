@@ -1,6 +1,6 @@
 package com.gabrieldsrod.cashr.api.service;
 
-import com.gabrieldsrod.cashr.api.dto.BudgetStatusResponse;
+import com.gabrieldsrod.cashr.api.dto.response.BudgetStatusResponse;
 import com.gabrieldsrod.cashr.api.model.*;
 import com.gabrieldsrod.cashr.api.repository.BudgetRepository;
 import com.gabrieldsrod.cashr.api.repository.TransactionRepository;

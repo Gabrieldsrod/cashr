@@ -1,8 +1,8 @@
 package com.gabrieldsrod.cashr.api.service;
 
-import com.gabrieldsrod.cashr.api.dto.AccountRequest;
-import com.gabrieldsrod.cashr.api.dto.AccountResponse;
-import com.gabrieldsrod.cashr.api.dto.StatementLineResponse;
+import com.gabrieldsrod.cashr.api.dto.request.AccountRequest;
+import com.gabrieldsrod.cashr.api.dto.response.AccountResponse;
+import com.gabrieldsrod.cashr.api.dto.request.StatementLineResponse;
 import com.gabrieldsrod.cashr.api.exception.BusinessException;
 import com.gabrieldsrod.cashr.api.model.Account;
 import com.gabrieldsrod.cashr.api.model.Transaction;

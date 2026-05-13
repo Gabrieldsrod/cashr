@@ -1,7 +1,7 @@
 package com.gabrieldsrod.cashr.api.service;
 
-import com.gabrieldsrod.cashr.api.dto.CategoryRequest;
-import com.gabrieldsrod.cashr.api.dto.CategoryResponse;
+import com.gabrieldsrod.cashr.api.dto.request.CategoryRequest;
+import com.gabrieldsrod.cashr.api.dto.response.CategoryResponse;
 import com.gabrieldsrod.cashr.api.exception.BusinessException;
 import com.gabrieldsrod.cashr.api.model.Category;
 import com.gabrieldsrod.cashr.api.model.User;

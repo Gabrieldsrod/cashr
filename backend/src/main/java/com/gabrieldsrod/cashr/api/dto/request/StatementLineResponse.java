@@ -1,4 +1,4 @@
-package com.gabrieldsrod.cashr.api.dto;
+package com.gabrieldsrod.cashr.api.dto.request;
 
 import com.gabrieldsrod.cashr.api.model.TransactionStatus;
 import com.gabrieldsrod.cashr.api.model.TransactionType;

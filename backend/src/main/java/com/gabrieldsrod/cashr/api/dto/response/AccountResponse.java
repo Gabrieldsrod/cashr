@@ -1,4 +1,4 @@
-package com.gabrieldsrod.cashr.api.dto;
+package com.gabrieldsrod.cashr.api.dto.response;
 
 import com.gabrieldsrod.cashr.api.model.AccountType;
 import com.gabrieldsrod.cashr.api.model.Currency;

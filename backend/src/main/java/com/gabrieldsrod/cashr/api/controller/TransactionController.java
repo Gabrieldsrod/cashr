@@ -1,8 +1,8 @@
 package com.gabrieldsrod.cashr.api.controller;
 
-import com.gabrieldsrod.cashr.api.dto.InstallmentRequest;
-import com.gabrieldsrod.cashr.api.dto.TransactionRequest;
-import com.gabrieldsrod.cashr.api.dto.TransactionResponse;
+import com.gabrieldsrod.cashr.api.dto.request.InstallmentRequest;
+import com.gabrieldsrod.cashr.api.dto.request.TransactionRequest;
+import com.gabrieldsrod.cashr.api.dto.response.TransactionResponse;
 import com.gabrieldsrod.cashr.api.model.TransactionStatus;
 import com.gabrieldsrod.cashr.api.model.TransactionType;
 import com.gabrieldsrod.cashr.api.service.TransactionService;

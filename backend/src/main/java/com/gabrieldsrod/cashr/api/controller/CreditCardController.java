@@ -1,8 +1,8 @@
 package com.gabrieldsrod.cashr.api.controller;
 
-import com.gabrieldsrod.cashr.api.dto.CreditCardRequest;
-import com.gabrieldsrod.cashr.api.dto.CreditCardResponse;
-import com.gabrieldsrod.cashr.api.dto.InvoiceResponse;
+import com.gabrieldsrod.cashr.api.dto.request.CreditCardRequest;
+import com.gabrieldsrod.cashr.api.dto.response.CreditCardResponse;
+import com.gabrieldsrod.cashr.api.dto.response.InvoiceResponse;
 import com.gabrieldsrod.cashr.api.service.CreditCardService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;

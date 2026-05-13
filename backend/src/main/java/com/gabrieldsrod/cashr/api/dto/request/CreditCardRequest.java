@@ -1,4 +1,4 @@
-package com.gabrieldsrod.cashr.api.dto;
+package com.gabrieldsrod.cashr.api.dto.request;
 
 import jakarta.validation.constraints.*;
 import lombok.Data;

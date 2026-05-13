@@ -1,7 +1,7 @@
 package com.gabrieldsrod.cashr.api.controller;
 
-import com.gabrieldsrod.cashr.api.dto.CategoryRequest;
-import com.gabrieldsrod.cashr.api.dto.CategoryResponse;
+import com.gabrieldsrod.cashr.api.dto.request.CategoryRequest;
+import com.gabrieldsrod.cashr.api.dto.response.CategoryResponse;
 import com.gabrieldsrod.cashr.api.service.CategoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

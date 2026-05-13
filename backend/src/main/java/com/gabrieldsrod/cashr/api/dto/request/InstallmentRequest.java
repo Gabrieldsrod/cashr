@@ -1,9 +1,10 @@
-package com.gabrieldsrod.cashr.api.dto;
+package com.gabrieldsrod.cashr.api.dto.request;
 
 import com.gabrieldsrod.cashr.api.model.Currency;
 import com.gabrieldsrod.cashr.api.model.PaymentMethod;
 import com.gabrieldsrod.cashr.api.model.TransactionStatus;
 import com.gabrieldsrod.cashr.api.model.TransactionType;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Data;
@@ -13,7 +14,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @Data
-public class TransactionRequest {
+public class InstallmentRequest {
 
     @NotNull
     private UUID userId;
@@ -42,4 +43,8 @@ public class TransactionRequest {
     private PaymentMethod paymentMethod;
 
     private UUID creditCardId;
+
+    @NotNull
+    @Min(2)
+    private Integer totalInstallments;
 }
