@@ -27,6 +27,7 @@ public class CategoryService {
         Category category = Category.builder()
                 .name(request.getName())
                 .description(request.getDescription())
+                .color(request.getColor())
                 .build();
 
         return toResponse(categoryRepository.save(category));
@@ -38,6 +39,7 @@ public class CategoryService {
 
         category.setName(request.getName());
         category.setDescription(request.getDescription());
+        category.setColor(request.getColor());
 
         return toResponse(categoryRepository.save(category));
     }
@@ -68,6 +70,7 @@ public class CategoryService {
                 .id(category.getId())
                 .name(category.getName())
                 .description(category.getDescription())
+                .color(category.getColor())
                 .build();
     }
 }

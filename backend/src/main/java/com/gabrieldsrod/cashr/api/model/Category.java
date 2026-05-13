@@ -24,4 +24,7 @@ public class Category {
     private String name;
 
     private String description;
+
+    @Column(length = 7)
+    private String color;
 }
