@@ -4,6 +4,7 @@ import com.gabrieldsrod.cashr.api.dto.request.InstallmentRequest;
 import com.gabrieldsrod.cashr.api.dto.request.TransactionRequest;
 import com.gabrieldsrod.cashr.api.dto.response.CategoryResponse;
 import com.gabrieldsrod.cashr.api.dto.response.CreditCardResponse;
+import com.gabrieldsrod.cashr.api.dto.response.TagResponse;
 import com.gabrieldsrod.cashr.api.dto.response.TransactionResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,7 +22,9 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +33,7 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final CategoryRepository categoryRepository;
     private final CreditCardRepository creditCardRepository;
+    private final TagService tagService;
 
     public TransactionResponse create(TransactionRequest request) {
         if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
@@ -220,6 +224,7 @@ public class TransactionService {
                 .installmentGroupId(transaction.getInstallmentGroupId())
                 .installmentNumber(transaction.getInstallmentNumber())
                 .totalInstallments(transaction.getTotalInstallments())
+                .tags(transaction.getTags().stream().map(tagService::toResponse).collect(Collectors.toSet()))
                 .build();
     }
 }

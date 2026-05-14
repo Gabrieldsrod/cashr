@@ -10,6 +10,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.UUID;
 
 @Data
@@ -32,4 +33,5 @@ public class TransactionResponse {
     private UUID installmentGroupId;
     private Integer installmentNumber;
     private Integer totalInstallments;
+    private Set<TagResponse> tags;
 }

@@ -1,5 +1,8 @@
 package com.gabrieldsrod.cashr.api.service;
 
+import com.gabrieldsrod.cashr.api.dto.request.TagRequest;
+import com.gabrieldsrod.cashr.api.dto.response.TagResponse;
+import com.gabrieldsrod.cashr.api.exception.BusinessException;
 import com.gabrieldsrod.cashr.api.model.Tag;
 import com.gabrieldsrod.cashr.api.model.Transaction;
 import com.gabrieldsrod.cashr.api.model.User;
@@ -21,27 +24,37 @@ public class TagService {
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
 
+    public List<TagResponse> findAll(UUID userId) {
+        return tagRepository.findAllByUserId(userId).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
     @Transactional
-    public Tag findOrCreate(String name, UUID userId) {
-        return tagRepository.findByUserIdAndNameIgnoreCase(userId, name)
-                .orElseGet(() -> {
-                    User user = userRepository.findById(userId)
-                            .orElseThrow(() -> new RuntimeException("User not found"));
-                    return tagRepository.save(Tag.builder().user(user).name(name).build());
-                });
+    public TagResponse create(TagRequest request) {
+        tagRepository.findByUserIdAndNameIgnoreCase(request.getUserId(), request.getName())
+                .ifPresent(t -> { throw new BusinessException("Tag '" + request.getName() + "' already exists"); });
+
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new BusinessException("User not found"));
+
+        return toResponse(tagRepository.save(Tag.builder().user(user).name(request.getName()).build()));
+    }
+
+    @Transactional
+    public void delete(UUID id) {
+        tagRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Tag not found"));
+        tagRepository.deleteById(id);
     }
 
     @Transactional
     public void attachToTransaction(UUID transactionId, List<String> tagNames) {
         Transaction transaction = transactionRepository.findById(transactionId)
-                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+                .orElseThrow(() -> new BusinessException("Transaction not found"));
 
         UUID userId = transaction.getUserId();
-
-        tagNames.forEach(name -> {
-            Tag tag = findOrCreate(name, userId);
-            transaction.getTags().add(tag);
-        });
+        tagNames.forEach(name -> transaction.getTags().add(findOrCreate(name, userId)));
 
         transactionRepository.save(transaction);
     }
@@ -49,10 +62,26 @@ public class TagService {
     @Transactional
     public void detachFromTransaction(UUID transactionId, UUID tagId) {
         Transaction transaction = transactionRepository.findById(transactionId)
-                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+                .orElseThrow(() -> new BusinessException("Transaction not found"));
 
         transaction.getTags().removeIf(tag -> tag.getId().equals(tagId));
-
         transactionRepository.save(transaction);
+    }
+
+    private Tag findOrCreate(String name, UUID userId) {
+        return tagRepository.findByUserIdAndNameIgnoreCase(userId, name)
+                .orElseGet(() -> {
+                    User user = userRepository.findById(userId)
+                            .orElseThrow(() -> new BusinessException("User not found"));
+                    return tagRepository.save(Tag.builder().user(user).name(name).build());
+                });
+    }
+
+    TagResponse toResponse(Tag tag) {
+        return TagResponse.builder()
+                .id(tag.getId())
+                .userId(tag.getUser().getId())
+                .name(tag.getName())
+                .build();
     }
 }
