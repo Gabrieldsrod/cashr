@@ -36,7 +36,7 @@ public class TagService {
         Transaction transaction = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new RuntimeException("Transaction not found"));
 
-        UUID userId = transaction.getAccount().getUser().getId();
+        UUID userId = transaction.getUserId();
 
         tagNames.forEach(name -> {
             Tag tag = findOrCreate(name, userId);

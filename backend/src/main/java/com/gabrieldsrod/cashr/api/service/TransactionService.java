@@ -12,7 +12,6 @@ import com.gabrieldsrod.cashr.api.model.*;
 import com.gabrieldsrod.cashr.api.repository.CategoryRepository;
 import com.gabrieldsrod.cashr.api.repository.CreditCardRepository;
 import com.gabrieldsrod.cashr.api.repository.TransactionRepository;
-import com.gabrieldsrod.cashr.api.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -31,15 +30,11 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final CategoryRepository categoryRepository;
     private final CreditCardRepository creditCardRepository;
-    private final UserRepository userRepository;
 
     public TransactionResponse create(TransactionRequest request) {
         if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Amount must be positive");
         }
-
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new BusinessException("User not found"));
 
         Category category = null;
         if (request.getCategoryId() != null) {
@@ -60,7 +55,7 @@ public class TransactionService {
         }
 
         Transaction transaction = Transaction.builder()
-                .user(user)
+                .userId(request.getUserId())
                 .type(request.getType())
                 .status(request.getStatus())
                 .currency(request.getCurrency())
@@ -100,9 +95,6 @@ public class TransactionService {
     }
 
     public List<TransactionResponse> createInstallments(InstallmentRequest request) {
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new BusinessException("User not found"));
-
         Category category = null;
         if (request.getCategoryId() != null) {
             category = categoryRepository.findById(request.getCategoryId())
@@ -133,7 +125,7 @@ public class TransactionService {
             }
 
             transactions.add(Transaction.builder()
-                    .user(user)
+                    .userId(request.getUserId())
                     .type(request.getType())
                     .status(request.getStatus())
                     .currency(request.getCurrency())
@@ -191,7 +183,7 @@ public class TransactionService {
             Category cat = transaction.getCategory();
             categoryResponse = CategoryResponse.builder()
                     .id(cat.getId())
-                    .userId(cat.getUser().getId())
+                    .userId(cat.getUserId())
                     .name(cat.getName())
                     .description(cat.getDescription())
                     .build();
@@ -213,7 +205,7 @@ public class TransactionService {
 
         return TransactionResponse.builder()
                 .id(transaction.getId())
-                .userId(transaction.getUser().getId())
+                .userId(transaction.getUserId())
                 .type(transaction.getType())
                 .status(transaction.getStatus())
                 .currency(transaction.getCurrency())

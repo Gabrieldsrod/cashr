@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-
 @Data
 @Builder
 @NoArgsConstructor
@@ -28,9 +27,8 @@ public class Account {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal initialBalance;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(nullable = false)
+    private UUID userId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

@@ -72,9 +72,8 @@ public class Transaction {
     private Integer installmentNumber;
     private Integer totalInstallments;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(nullable = false)
+    private UUID userId;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

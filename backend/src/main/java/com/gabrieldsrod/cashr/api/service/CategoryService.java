@@ -4,10 +4,8 @@ import com.gabrieldsrod.cashr.api.dto.request.CategoryRequest;
 import com.gabrieldsrod.cashr.api.dto.response.CategoryResponse;
 import com.gabrieldsrod.cashr.api.exception.BusinessException;
 import com.gabrieldsrod.cashr.api.model.Category;
-import com.gabrieldsrod.cashr.api.model.User;
 import com.gabrieldsrod.cashr.api.repository.CategoryRepository;
 import com.gabrieldsrod.cashr.api.repository.TransactionRepository;
-import com.gabrieldsrod.cashr.api.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,21 +18,17 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final TransactionRepository transactionRepository;
-    private final UserRepository userRepository;
 
     public CategoryResponse create(CategoryRequest request) {
         if (categoryRepository.existsByNameAndUserId(request.getName(), request.getUserId())) {
             throw new BusinessException("Category with name '" + request.getName() + "' already exists");
         }
 
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new BusinessException("User not found"));
-
         Category category = Category.builder()
                 .name(request.getName())
                 .description(request.getDescription())
                 .color(request.getColor())
-                .user(user)
+                .userId(request.getUserId())
                 .build();
 
         return toResponse(categoryRepository.save(category));
@@ -80,7 +74,7 @@ public class CategoryService {
     private CategoryResponse toResponse(Category category) {
         return CategoryResponse.builder()
                 .id(category.getId())
-                .userId(category.getUser().getId())
+                .userId(category.getUserId())
                 .name(category.getName())
                 .description(category.getDescription())
                 .color(category.getColor())

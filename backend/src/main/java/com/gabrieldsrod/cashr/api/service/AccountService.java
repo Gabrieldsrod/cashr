@@ -8,10 +8,8 @@ import com.gabrieldsrod.cashr.api.model.Account;
 import com.gabrieldsrod.cashr.api.model.Transaction;
 import com.gabrieldsrod.cashr.api.model.TransactionStatus;
 import com.gabrieldsrod.cashr.api.model.TransactionType;
-import com.gabrieldsrod.cashr.api.model.User;
 import com.gabrieldsrod.cashr.api.repository.AccountRepository;
 import com.gabrieldsrod.cashr.api.repository.TransactionRepository;
-import com.gabrieldsrod.cashr.api.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -27,7 +25,6 @@ public class AccountService {
 
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
-    private final UserRepository userRepository;
 
     public AccountResponse create(AccountRequest request) {
         if (accountRepository.existsByNameAndUserId(request.getName(), request.getUserId())) {
@@ -37,7 +34,7 @@ public class AccountService {
         Account account = Account.builder()
                 .name(request.getName())
                 .initialBalance(request.getInitialBalance())
-                .user(findUser(request.getUserId()))
+                .userId(request.getUserId())
                 .type(request.getType())
                 .currency(request.getCurrency())
                 .build();
@@ -50,7 +47,7 @@ public class AccountService {
                 .orElseThrow(() -> new RuntimeException("Account not found"));
 
         account.setName(request.getName());
-        account.setUser(findUser(request.getUserId()));
+        account.setUserId(request.getUserId());
         account.setType(request.getType());
         account.setCurrency(request.getCurrency());
 
@@ -112,11 +109,6 @@ public class AccountService {
         accountRepository.deleteById(id);
     }
 
-    private User findUser(UUID userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException("User not found"));
-    }
-
     private BigDecimal calculateCurrentBalance(UUID accountId, BigDecimal initialBalance, LocalDate start, LocalDate end) {
         BigDecimal income;
         BigDecimal expenses;
@@ -143,7 +135,7 @@ public class AccountService {
 
         return AccountResponse.builder()
                 .id(account.getId())
-                .userId(account.getUser().getId())
+                .userId(account.getUserId())
                 .name(account.getName())
                 .initialBalance(account.getInitialBalance())
                 .currentBalance(currentBalance)
