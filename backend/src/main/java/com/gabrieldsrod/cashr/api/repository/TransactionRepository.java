@@ -42,13 +42,13 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     List<Transaction> findByCreditCardAndInvoicePeriod(@Param("creditCardId") UUID creditCardId, @Param("start") LocalDate start, @Param("end") LocalDate end);
 
     @Query(value = "SELECT t FROM Transaction t LEFT JOIN FETCH t.category LEFT JOIN FETCH t.creditCard " +
-                   "WHERE t.user.id = :userId " +
+                   "WHERE t.userId = :userId " +
                    "AND (:type IS NULL OR t.type = :type) " +
                    "AND (:status IS NULL OR t.status = :status) " +
                    "AND (:start IS NULL OR t.competenceDate >= :start) " +
                    "AND (:end IS NULL OR t.competenceDate <= :end)",
            countQuery = "SELECT COUNT(t) FROM Transaction t " +
-                        "WHERE t.user.id = :userId " +
+                        "WHERE t.userId = :userId " +
                         "AND (:type IS NULL OR t.type = :type) " +
                         "AND (:status IS NULL OR t.status = :status) " +
                         "AND (:start IS NULL OR t.competenceDate >= :start) " +
