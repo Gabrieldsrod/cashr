@@ -5,6 +5,8 @@ import com.gabrieldsrod.cashr.api.dto.response.CreditCardResponse;
 import com.gabrieldsrod.cashr.api.dto.response.InvoiceResponse;
 import com.gabrieldsrod.cashr.api.model.User;
 import com.gabrieldsrod.cashr.api.service.CreditCardService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -22,21 +24,25 @@ import java.util.UUID;
 @RequestMapping("/api/credit-cards")
 @RequiredArgsConstructor
 @Validated
+@Tag(name = "Credit Cards", description = "Cartões de crédito e geração de faturas")
 public class CreditCardController {
 
     private final CreditCardService creditCardService;
 
     @GetMapping
+    @Operation(summary = "Lista os cartões de crédito do usuário autenticado")
     public ResponseEntity<List<CreditCardResponse>> findAllByUser(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(creditCardService.findAllByUser(user.getId()));
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Busca um cartão de crédito por ID")
     public ResponseEntity<CreditCardResponse> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(creditCardService.findById(id));
     }
 
     @PostMapping
+    @Operation(summary = "Cria um novo cartão de crédito")
     public ResponseEntity<CreditCardResponse> create(
             @AuthenticationPrincipal User user,
             @Valid @RequestBody CreditCardRequest request) {
@@ -44,6 +50,7 @@ public class CreditCardController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Atualiza um cartão de crédito")
     public ResponseEntity<CreditCardResponse> update(
             @PathVariable UUID id,
             @AuthenticationPrincipal User user,
@@ -52,12 +59,14 @@ public class CreditCardController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Exclui um cartão de crédito")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         creditCardService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}/invoice")
+    @Operation(summary = "Devolve a fatura do cartão para um mês/ano específico")
     public ResponseEntity<InvoiceResponse> getInvoice(
             @PathVariable UUID id,
             @RequestParam @Min(2000) @Max(2100) int year,

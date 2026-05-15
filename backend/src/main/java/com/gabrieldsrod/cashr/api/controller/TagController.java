@@ -4,6 +4,7 @@ import com.gabrieldsrod.cashr.api.dto.request.TagRequest;
 import com.gabrieldsrod.cashr.api.dto.response.TagResponse;
 import com.gabrieldsrod.cashr.api.model.User;
 import com.gabrieldsrod.cashr.api.service.TagService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,16 +18,19 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/tags")
 @RequiredArgsConstructor
+@io.swagger.v3.oas.annotations.tags.Tag(name = "Tags", description = "Etiquetas livres para classificar transações")
 public class TagController {
 
     private final TagService tagService;
 
     @GetMapping
+    @Operation(summary = "Lista as tags do usuário autenticado")
     public ResponseEntity<List<TagResponse>> findAll(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(tagService.findAll(user.getId()));
     }
 
     @PostMapping
+    @Operation(summary = "Cria uma nova tag")
     public ResponseEntity<TagResponse> create(
             @AuthenticationPrincipal User user,
             @Valid @RequestBody TagRequest request) {
@@ -34,18 +38,21 @@ public class TagController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Exclui uma tag")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         tagService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/transaction/{transactionId}")
+    @Operation(summary = "Vincula uma ou mais tags a uma transação (cria as que ainda não existem)")
     public ResponseEntity<Void> attachToTransaction(@PathVariable UUID transactionId, @RequestBody List<String> tagNames) {
         tagService.attachToTransaction(transactionId, tagNames);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/transaction/{transactionId}/{tagId}")
+    @Operation(summary = "Remove a vinculação de uma tag de uma transação")
     public ResponseEntity<Void> detachFromTransaction(@PathVariable UUID transactionId, @PathVariable UUID tagId) {
         tagService.detachFromTransaction(transactionId, tagId);
         return ResponseEntity.noContent().build();

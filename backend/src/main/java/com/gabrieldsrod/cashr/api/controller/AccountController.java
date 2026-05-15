@@ -6,6 +6,8 @@ import com.gabrieldsrod.cashr.api.dto.response.AccountResponse;
 import com.gabrieldsrod.cashr.api.model.TransactionStatus;
 import com.gabrieldsrod.cashr.api.model.User;
 import com.gabrieldsrod.cashr.api.service.AccountService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,16 +22,19 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/accounts")
 @RequiredArgsConstructor
+@Tag(name = "Accounts", description = "Contas do usuário e cálculo de saldo")
 public class AccountController {
 
     private final AccountService accountService;
 
     @GetMapping
+    @Operation(summary = "Lista todas as contas do usuário autenticado")
     public ResponseEntity<List<AccountResponse>> findAll(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(accountService.findAllByUserId(user.getId()));
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Busca uma conta por ID, opcionalmente com saldo recalculado para um período")
     public ResponseEntity<AccountResponse> findById(
             @PathVariable UUID id,
             @AuthenticationPrincipal User user,
@@ -39,6 +44,7 @@ public class AccountController {
     }
 
     @GetMapping("/{id}/statement")
+    @Operation(summary = "Extrato da conta com saldo acumulado linha a linha")
     public ResponseEntity<List<StatementLineResponse>> getStatement(
             @PathVariable UUID id,
             @AuthenticationPrincipal User user,
@@ -49,6 +55,7 @@ public class AccountController {
     }
 
     @PostMapping
+    @Operation(summary = "Cria uma nova conta")
     public ResponseEntity<AccountResponse> create(
             @AuthenticationPrincipal User user,
             @Valid @RequestBody AccountRequest request) {
@@ -56,6 +63,7 @@ public class AccountController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Atualiza nome e tipo da conta (initialBalance é imutável)")
     public ResponseEntity<AccountResponse> update(
             @PathVariable UUID id,
             @AuthenticationPrincipal User user,
@@ -64,6 +72,7 @@ public class AccountController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Exclui uma conta (só permitido se não houver transações vinculadas)")
     public ResponseEntity<Void> delete(@PathVariable UUID id, @AuthenticationPrincipal User user) {
         accountService.deleteByIdAndUserId(id, user.getId());
         return ResponseEntity.noContent().build();
