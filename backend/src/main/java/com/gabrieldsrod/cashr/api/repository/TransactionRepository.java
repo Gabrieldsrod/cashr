@@ -17,10 +17,11 @@ import java.util.UUID;
 
 public interface TransactionRepository extends JpaRepository<Transaction, UUID> {
 
-    List<Transaction> findByUserIdAndCompetenceDateBetween(UUID userId, LocalDate start, LocalDate end);
-
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.account.id = :accountId AND t.type = :type AND t.status = :status")
     BigDecimal sumAmountByAccountIdAndTypeAndStatus(UUID accountId, TransactionType type, TransactionStatus status);
+
+    @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.userId = :userId AND t.type = :type AND t.status = :status AND t.competenceDate BETWEEN :start AND :end")
+    BigDecimal sumAmountByUserIdAndTypeAndStatusAndPeriod(UUID userId, TransactionType type, TransactionStatus status, LocalDate start, LocalDate end);
 
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.account.id = :accountId AND t.type = :type AND t.status = :status AND t.competenceDate BETWEEN :start AND :end")
     BigDecimal sumAmountByAccountIdAndTypeAndStatusAndPeriod(UUID accountId, TransactionType type, TransactionStatus status, LocalDate start, LocalDate end);

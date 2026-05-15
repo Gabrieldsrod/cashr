@@ -56,13 +56,6 @@ class TransactionServiceTest {
     private final UUID USER_A = UUID.randomUUID();
     private final UUID USER_B = UUID.randomUUID();
 
-    private Transaction income(BigDecimal amount) {
-        return Transaction.builder().type(TransactionType.INCOME).amount(amount).build();
-    }
-
-    private Transaction expense(BigDecimal amount) {
-        return Transaction.builder().type(TransactionType.EXPENSE).amount(amount).build();
-    }
 
     private Account buildAccount(UUID id, UUID userId) {
         return Account.builder()
@@ -91,29 +84,46 @@ class TransactionServiceTest {
 
     @Test
     void getMonthlyBalance_shouldReturnIncomeMinusExpenses() {
-        when(transactionRepository.findByUserIdAndCompetenceDateBetween(eq(USER_A), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(List.of(
-                        income(new BigDecimal("3000.00")),
-                        expense(new BigDecimal("800.00")),
-                        expense(new BigDecimal("200.00"))
-                ));
+        LocalDate start = LocalDate.of(2026, 5, 1);
+        LocalDate end = LocalDate.of(2026, 5, 31);
+        when(transactionRepository.sumAmountByUserIdAndTypeAndStatusAndPeriod(
+                USER_A, TransactionType.INCOME, TransactionStatus.PAID, start, end))
+                .thenReturn(new BigDecimal("3000.00"));
+        when(transactionRepository.sumAmountByUserIdAndTypeAndStatusAndPeriod(
+                USER_A, TransactionType.EXPENSE, TransactionStatus.PAID, start, end))
+                .thenReturn(new BigDecimal("1000.00"));
 
         BigDecimal balance = transactionService.getMonthlyBalance(USER_A, 2026, 5);
 
         assertEquals(new BigDecimal("2000.00"), balance);
     }
 
+    @Test
+    void getMonthlyBalance_queriesOnlyPaidStatus() {
+        when(transactionRepository.sumAmountByUserIdAndTypeAndStatusAndPeriod(
+                any(UUID.class), any(TransactionType.class), any(TransactionStatus.class),
+                any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(BigDecimal.ZERO);
+
+        transactionService.getMonthlyBalance(USER_A, 2026, 5);
+
+        verify(transactionRepository, never()).sumAmountByUserIdAndTypeAndStatusAndPeriod(
+                any(), any(), eq(TransactionStatus.PENDING), any(), any());
+    }
+
     // ── isolamento User A vs User B ───────────────────────────────────────────
 
     @Test
-    void getMonthlyBalance_userB_doesNotSeeUserA_transactions() {
-        when(transactionRepository.findByUserIdAndCompetenceDateBetween(eq(USER_B), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(List.of());
+    void getMonthlyBalance_userB_doesNotQueryUserA_data() {
+        when(transactionRepository.sumAmountByUserIdAndTypeAndStatusAndPeriod(
+                eq(USER_B), any(), any(), any(), any()))
+                .thenReturn(BigDecimal.ZERO);
 
         BigDecimal balance = transactionService.getMonthlyBalance(USER_B, 2026, 5);
 
         assertEquals(BigDecimal.ZERO, balance);
-        verify(transactionRepository, never()).findByUserIdAndCompetenceDateBetween(eq(USER_A), any(), any());
+        verify(transactionRepository, never()).sumAmountByUserIdAndTypeAndStatusAndPeriod(
+                eq(USER_A), any(), any(), any(), any());
     }
 
     // ── findById: isolamento por usuário ──────────────────────────────────────

@@ -168,17 +168,10 @@ public class TransactionService {
         LocalDate start = yearMonth.atDay(1);
         LocalDate end = yearMonth.atEndOfMonth();
 
-        List<Transaction> transactions = transactionRepository.findByUserIdAndCompetenceDateBetween(userId, start, end);
-
-        BigDecimal income = transactions.stream()
-                .filter(t -> t.getType() == TransactionType.INCOME)
-                .map(Transaction::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal expenses = transactions.stream()
-                .filter(t -> t.getType() == TransactionType.EXPENSE)
-                .map(Transaction::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal income = transactionRepository.sumAmountByUserIdAndTypeAndStatusAndPeriod(
+                userId, TransactionType.INCOME, TransactionStatus.PAID, start, end);
+        BigDecimal expenses = transactionRepository.sumAmountByUserIdAndTypeAndStatusAndPeriod(
+                userId, TransactionType.EXPENSE, TransactionStatus.PAID, start, end);
 
         return income.subtract(expenses);
     }
