@@ -9,7 +9,10 @@ import com.gabrieldsrod.cashr.api.dto.response.TransactionResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import com.gabrieldsrod.cashr.api.exception.BusinessException;
+import com.gabrieldsrod.cashr.api.exception.ResourceNotFoundException;
 import com.gabrieldsrod.cashr.api.model.*;
+
+import com.gabrieldsrod.cashr.api.repository.AccountRepository;
 import com.gabrieldsrod.cashr.api.repository.CategoryRepository;
 import com.gabrieldsrod.cashr.api.repository.CreditCardRepository;
 import com.gabrieldsrod.cashr.api.repository.TransactionRepository;
@@ -33,12 +36,16 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final CategoryRepository categoryRepository;
     private final CreditCardRepository creditCardRepository;
+    private final AccountRepository accountRepository;
     private final TagService tagService;
 
     public TransactionResponse create(TransactionRequest request, UUID userId) {
         if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Amount must be positive");
         }
+
+        Account account = accountRepository.findByIdAndUserId(request.getAccountId(), userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Conta não encontrada"));
 
         Category category = null;
         if (request.getCategoryId() != null) {
@@ -66,6 +73,7 @@ public class TransactionService {
                 .amount(request.getAmount())
                 .competenceDate(request.getCompetenceDate())
                 .description(request.getDescription())
+                .account(account)
                 .category(category)
                 .paymentMethod(request.getPaymentMethod())
                 .creditCard(creditCard)
@@ -75,9 +83,9 @@ public class TransactionService {
         return toResponse(transactionRepository.save(transaction));
     }
 
-    public TransactionResponse findById(UUID id) {
-        Transaction transaction = transactionRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("Transaction not found"));
+    public TransactionResponse findById(UUID id, UUID userId) {
+        Transaction transaction = transactionRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Transação não encontrada"));
         return toResponse(transaction);
     }
 
@@ -93,12 +101,15 @@ public class TransactionService {
                 .map(this::toResponse);
     }
 
-    public List<TransactionResponse> findByInstallmentGroup(UUID groupId) {
-        return transactionRepository.findByInstallmentGroupIdOrderByInstallmentNumberAsc(groupId)
+    public List<TransactionResponse> findByInstallmentGroup(UUID groupId, UUID userId) {
+        return transactionRepository.findByInstallmentGroupIdAndUserIdOrderByInstallmentNumberAsc(groupId, userId)
                 .stream().map(this::toResponse).toList();
     }
 
     public List<TransactionResponse> createInstallments(InstallmentRequest request, UUID userId) {
+        Account account = accountRepository.findByIdAndUserId(request.getAccountId(), userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Conta não encontrada"));
+
         Category category = null;
         if (request.getCategoryId() != null) {
             category = categoryRepository.findById(request.getCategoryId())
@@ -136,6 +147,7 @@ public class TransactionService {
                     .amount(installmentAmount)
                     .competenceDate(competenceDate)
                     .description(request.getDescription())
+                    .account(account)
                     .category(category)
                     .paymentMethod(request.getPaymentMethod())
                     .creditCard(creditCard)

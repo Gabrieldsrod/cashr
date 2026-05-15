@@ -45,13 +45,17 @@ public class TransactionController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TransactionResponse> findById(@PathVariable UUID id) {
-        return ResponseEntity.ok(transactionService.findById(id));
+    public ResponseEntity<TransactionResponse> findById(
+            @AuthenticationPrincipal User user,
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(transactionService.findById(id, user.getId()));
     }
 
     @GetMapping("/installment-group/{groupId}")
-    public ResponseEntity<List<TransactionResponse>> findByInstallmentGroup(@PathVariable UUID groupId) {
-        return ResponseEntity.ok(transactionService.findByInstallmentGroup(groupId));
+    public ResponseEntity<List<TransactionResponse>> findByInstallmentGroup(
+            @AuthenticationPrincipal User user,
+            @PathVariable UUID groupId) {
+        return ResponseEntity.ok(transactionService.findByInstallmentGroup(groupId, user.getId()));
     }
 
     @PostMapping

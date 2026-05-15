@@ -35,6 +35,9 @@ public class InstallmentRequest {
     private String description;
 
     @NotNull
+    private UUID accountId;
+
+    @NotNull
     private UUID categoryId;
 
     private PaymentMethod paymentMethod;

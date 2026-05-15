@@ -34,6 +34,9 @@ public class TransactionRequest {
     private String description;
 
     @NotNull
+    private UUID accountId;
+
+    @NotNull
     private UUID categoryId;
 
     private PaymentMethod paymentMethod;

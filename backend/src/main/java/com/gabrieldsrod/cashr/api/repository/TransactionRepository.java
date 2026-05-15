@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface TransactionRepository extends JpaRepository<Transaction, UUID> {
@@ -59,5 +60,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
                                       @Param("end") LocalDate end,
                                       Pageable pageable);
 
-    List<Transaction> findByInstallmentGroupIdOrderByInstallmentNumberAsc(UUID installmentGroupId);
+    List<Transaction> findByInstallmentGroupIdAndUserIdOrderByInstallmentNumberAsc(UUID installmentGroupId, UUID userId);
+
+    Optional<Transaction> findByIdAndUserId(UUID id, UUID userId);
 }
