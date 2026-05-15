@@ -4,5 +4,6 @@ public enum AccountType {
     CHECKING,
     SAVINGS,
     CASH,
-    SALARY
+    SALARY,
+    DIGITAL_WALLET
 }
