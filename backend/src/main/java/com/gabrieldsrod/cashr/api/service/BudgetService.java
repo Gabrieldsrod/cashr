@@ -1,15 +1,22 @@
 package com.gabrieldsrod.cashr.api.service;
 
+import com.gabrieldsrod.cashr.api.dto.request.BudgetRequest;
+import com.gabrieldsrod.cashr.api.dto.response.BudgetResponse;
 import com.gabrieldsrod.cashr.api.dto.response.BudgetStatusResponse;
+import com.gabrieldsrod.cashr.api.exception.BusinessException;
+import com.gabrieldsrod.cashr.api.exception.ResourceNotFoundException;
 import com.gabrieldsrod.cashr.api.model.*;
 import com.gabrieldsrod.cashr.api.repository.BudgetRepository;
+import com.gabrieldsrod.cashr.api.repository.CategoryRepository;
 import com.gabrieldsrod.cashr.api.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -17,11 +24,74 @@ import java.util.UUID;
 public class BudgetService {
 
     private final BudgetRepository budgetRepository;
+    private final CategoryRepository categoryRepository;
     private final TransactionRepository transactionRepository;
 
-    public BudgetStatusResponse calculateBudgetStatus(UUID budgetId) {
-        Budget budget = budgetRepository.findById(budgetId)
-                .orElseThrow(() -> new RuntimeException("Budget not found"));
+    public BudgetResponse create(BudgetRequest request, UUID userId) {
+        Category category = categoryRepository.findByIdAndUserId(request.getCategoryId(), userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+
+        LocalDate month = YearMonth.of(request.getYear(), request.getMonth()).atDay(1);
+
+        if (budgetRepository.existsByUserIdAndCategoryIdAndMonth(userId, category.getId(), month)) {
+            throw new BusinessException("Budget already exists for this category and month");
+        }
+
+        Budget budget = Budget.builder()
+                .userId(userId)
+                .category(category)
+                .month(month)
+                .limitAmount(request.getLimitAmount())
+                .build();
+
+        return toResponse(budgetRepository.save(budget));
+    }
+
+    public BudgetResponse update(UUID id, BudgetRequest request, UUID userId) {
+        Budget budget = budgetRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Budget not found"));
+
+        Category category = categoryRepository.findByIdAndUserId(request.getCategoryId(), userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+
+        LocalDate month = YearMonth.of(request.getYear(), request.getMonth()).atDay(1);
+
+        boolean keyChanged = !budget.getCategory().getId().equals(category.getId())
+                || !budget.getMonth().equals(month);
+
+        if (keyChanged && budgetRepository.existsByUserIdAndCategoryIdAndMonth(userId, category.getId(), month)) {
+            throw new BusinessException("Budget already exists for this category and month");
+        }
+
+        budget.setCategory(category);
+        budget.setMonth(month);
+        budget.setLimitAmount(request.getLimitAmount());
+
+        return toResponse(budgetRepository.save(budget));
+    }
+
+    public List<BudgetResponse> findAll(UUID userId, Integer year, Integer month) {
+        List<Budget> budgets = (year != null && month != null)
+                ? budgetRepository.findAllByUserIdAndMonth(userId, YearMonth.of(year, month).atDay(1))
+                : budgetRepository.findAllByUserId(userId);
+
+        return budgets.stream().map(this::toResponse).toList();
+    }
+
+    public BudgetResponse findById(UUID id, UUID userId) {
+        return toResponse(budgetRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Budget not found")));
+    }
+
+    public void delete(UUID id, UUID userId) {
+        Budget budget = budgetRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Budget not found"));
+        budgetRepository.delete(budget);
+    }
+
+    public BudgetStatusResponse getStatus(UUID id, UUID userId) {
+        Budget budget = budgetRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Budget not found"));
 
         YearMonth yearMonth = YearMonth.from(budget.getMonth());
 
@@ -49,10 +119,23 @@ public class BudgetService {
 
         return BudgetStatusResponse.builder()
                 .budgetId(budget.getId())
+                .categoryId(budget.getCategory().getId())
+                .categoryName(budget.getCategory().getName())
+                .month(budget.getMonth())
                 .limitAmount(budget.getLimitAmount())
                 .spent(spent)
                 .percentageUsed(percentage)
                 .status(status)
+                .build();
+    }
+
+    private BudgetResponse toResponse(Budget budget) {
+        return BudgetResponse.builder()
+                .id(budget.getId())
+                .categoryId(budget.getCategory().getId())
+                .categoryName(budget.getCategory().getName())
+                .month(budget.getMonth())
+                .limitAmount(budget.getLimitAmount())
                 .build();
     }
 }

@@ -1,6 +1,5 @@
 package com.gabrieldsrod.cashr.api.dto.response;
 
-import com.gabrieldsrod.cashr.api.model.BudgetStatus;
 import lombok.Builder;
 import lombok.Data;
 
@@ -10,14 +9,11 @@ import java.util.UUID;
 
 @Data
 @Builder
-public class BudgetStatusResponse {
+public class BudgetResponse {
 
-    private UUID budgetId;
+    private UUID id;
     private UUID categoryId;
     private String categoryName;
     private LocalDate month;
     private BigDecimal limitAmount;
-    private BigDecimal spent;
-    private BigDecimal percentageUsed;
-    private BudgetStatus status;
 }
