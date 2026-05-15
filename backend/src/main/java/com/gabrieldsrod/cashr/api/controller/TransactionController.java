@@ -5,6 +5,7 @@ import com.gabrieldsrod.cashr.api.dto.request.TransactionRequest;
 import com.gabrieldsrod.cashr.api.dto.response.TransactionResponse;
 import com.gabrieldsrod.cashr.api.model.TransactionStatus;
 import com.gabrieldsrod.cashr.api.model.TransactionType;
+import com.gabrieldsrod.cashr.api.model.User;
 import com.gabrieldsrod.cashr.api.service.TransactionService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,13 +35,13 @@ public class TransactionController {
 
     @GetMapping
     public ResponseEntity<Page<TransactionResponse>> findAll(
-            @RequestParam UUID userId,
+            @AuthenticationPrincipal User user,
             @RequestParam(required = false) TransactionType type,
             @RequestParam(required = false) TransactionStatus status,
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) @Min(1) @Max(12) Integer month,
             @PageableDefault(size = 20, sort = "competenceDate", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(transactionService.findAll(userId, type, status, year, month, pageable));
+        return ResponseEntity.ok(transactionService.findAll(user.getId(), type, status, year, month, pageable));
     }
 
     @GetMapping("/{id}")
@@ -53,20 +55,24 @@ public class TransactionController {
     }
 
     @PostMapping
-    public ResponseEntity<TransactionResponse> create(@Valid @RequestBody TransactionRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(transactionService.create(request));
+    public ResponseEntity<TransactionResponse> create(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody TransactionRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(transactionService.create(request, user.getId()));
     }
 
     @PostMapping("/installments")
-    public ResponseEntity<List<TransactionResponse>> createInstallments(@Valid @RequestBody InstallmentRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(transactionService.createInstallments(request));
+    public ResponseEntity<List<TransactionResponse>> createInstallments(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody InstallmentRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(transactionService.createInstallments(request, user.getId()));
     }
 
     @GetMapping("/balance")
     public ResponseEntity<BigDecimal> getMonthlyBalance(
-            @RequestParam UUID userId,
+            @AuthenticationPrincipal User user,
             @RequestParam @Min(2000) @Max(2100) int year,
             @RequestParam @Min(1) @Max(12) int month) {
-        return ResponseEntity.ok(transactionService.getMonthlyBalance(userId, year, month));
+        return ResponseEntity.ok(transactionService.getMonthlyBalance(user.getId(), year, month));
     }
 }

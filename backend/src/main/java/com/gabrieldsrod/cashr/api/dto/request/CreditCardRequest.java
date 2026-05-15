@@ -28,8 +28,5 @@ public class CreditCardRequest {
     private BigDecimal creditLimit;
 
     @NotNull
-    private UUID userId;
-
-    @NotNull
     private UUID accountId;
 }

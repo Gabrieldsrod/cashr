@@ -35,7 +35,7 @@ public class TransactionService {
     private final CreditCardRepository creditCardRepository;
     private final TagService tagService;
 
-    public TransactionResponse create(TransactionRequest request) {
+    public TransactionResponse create(TransactionRequest request, UUID userId) {
         if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Amount must be positive");
         }
@@ -59,7 +59,7 @@ public class TransactionService {
         }
 
         Transaction transaction = Transaction.builder()
-                .userId(request.getUserId())
+                .userId(userId)
                 .type(request.getType())
                 .status(request.getStatus())
                 .currency(request.getCurrency())
@@ -98,7 +98,7 @@ public class TransactionService {
                 .stream().map(this::toResponse).toList();
     }
 
-    public List<TransactionResponse> createInstallments(InstallmentRequest request) {
+    public List<TransactionResponse> createInstallments(InstallmentRequest request, UUID userId) {
         Category category = null;
         if (request.getCategoryId() != null) {
             category = categoryRepository.findById(request.getCategoryId())
@@ -129,7 +129,7 @@ public class TransactionService {
             }
 
             transactions.add(Transaction.builder()
-                    .userId(request.getUserId())
+                    .userId(userId)
                     .type(request.getType())
                     .status(request.getStatus())
                     .currency(request.getCurrency())

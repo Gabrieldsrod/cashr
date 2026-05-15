@@ -8,7 +8,6 @@ import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.util.UUID;
 
 @Data
 public class AccountRequest {
@@ -19,9 +18,6 @@ public class AccountRequest {
     @NotNull
     @PositiveOrZero
     private BigDecimal initialBalance;
-
-    @NotNull
-    private UUID userId;
 
     @NotNull
     private AccountType type;

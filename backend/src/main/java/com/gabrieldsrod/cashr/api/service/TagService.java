@@ -31,11 +31,11 @@ public class TagService {
     }
 
     @Transactional
-    public TagResponse create(TagRequest request) {
-        tagRepository.findByUserIdAndNameIgnoreCase(request.getUserId(), request.getName())
+    public TagResponse create(TagRequest request, UUID userId) {
+        tagRepository.findByUserIdAndNameIgnoreCase(userId, request.getName())
                 .ifPresent(t -> { throw new BusinessException("Tag '" + request.getName() + "' already exists"); });
 
-        User user = userRepository.findById(request.getUserId())
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException("User not found"));
 
         return toResponse(tagRepository.save(Tag.builder().user(user).name(request.getName()).build()));

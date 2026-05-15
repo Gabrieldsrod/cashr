@@ -3,6 +3,7 @@ package com.gabrieldsrod.cashr.api.controller;
 import com.gabrieldsrod.cashr.api.dto.request.CreditCardRequest;
 import com.gabrieldsrod.cashr.api.dto.response.CreditCardResponse;
 import com.gabrieldsrod.cashr.api.dto.response.InvoiceResponse;
+import com.gabrieldsrod.cashr.api.model.User;
 import com.gabrieldsrod.cashr.api.service.CreditCardService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -10,6 +11,7 @@ import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,14 +26,9 @@ public class CreditCardController {
 
     private final CreditCardService creditCardService;
 
-    @PostMapping
-    public ResponseEntity<CreditCardResponse> create(@Valid @RequestBody CreditCardRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(creditCardService.create(request));
-    }
-
     @GetMapping
-    public ResponseEntity<List<CreditCardResponse>> findAllByUser(@RequestParam UUID userId) {
-        return ResponseEntity.ok(creditCardService.findAllByUser(userId));
+    public ResponseEntity<List<CreditCardResponse>> findAllByUser(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(creditCardService.findAllByUser(user.getId()));
     }
 
     @GetMapping("/{id}")
@@ -39,9 +36,19 @@ public class CreditCardController {
         return ResponseEntity.ok(creditCardService.findById(id));
     }
 
+    @PostMapping
+    public ResponseEntity<CreditCardResponse> create(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody CreditCardRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(creditCardService.create(request, user));
+    }
+
     @PutMapping("/{id}")
-    public ResponseEntity<CreditCardResponse> update(@PathVariable UUID id, @Valid @RequestBody CreditCardRequest request) {
-        return ResponseEntity.ok(creditCardService.update(id, request));
+    public ResponseEntity<CreditCardResponse> update(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody CreditCardRequest request) {
+        return ResponseEntity.ok(creditCardService.update(id, request, user));
     }
 
     @DeleteMapping("/{id}")

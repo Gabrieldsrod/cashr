@@ -17,9 +17,6 @@ import java.util.UUID;
 public class InstallmentRequest {
 
     @NotNull
-    private UUID userId;
-
-    @NotNull
     private TransactionType type;
 
     @NotNull

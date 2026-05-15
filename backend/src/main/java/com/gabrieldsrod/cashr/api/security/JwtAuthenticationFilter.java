@@ -1,5 +1,7 @@
 package com.gabrieldsrod.cashr.api.security;
 
+import com.gabrieldsrod.cashr.api.model.User;
+import com.gabrieldsrod.cashr.api.repository.UserRepository;
 import com.gabrieldsrod.cashr.api.service.JwtTokenProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -10,34 +12,35 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;
+    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
-                                   FilterChain filterChain) throws ServletException, IOException {
+                                    FilterChain filterChain) throws ServletException, IOException {
         try {
             String jwt = extractTokenFromRequest(request);
 
             if (jwt != null && tokenProvider.validateToken(jwt)) {
-                var userId = tokenProvider.getUserIdFromToken(jwt);
+                UUID userId = tokenProvider.getUserIdFromToken(jwt);
+                User user = userRepository.findById(userId).orElse(null);
 
-                var authToken = new UsernamePasswordAuthenticationToken(
-                        userId.toString(),
-                        null,
-                        new ArrayList<>()
-                );
-
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                if (user != null) {
+                    var authToken = new UsernamePasswordAuthenticationToken(user, null, new ArrayList<>());
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
             }
         } catch (Exception e) {
-            // Log erro mas não falha — deixa o request prosseguir (vai ser rejeitado no controller)
+            // deixa o request prosseguir; será rejeitado pelo Spring Security
         }
 
         filterChain.doFilter(request, response);

@@ -19,8 +19,8 @@ public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final TransactionRepository transactionRepository;
 
-    public CategoryResponse create(CategoryRequest request) {
-        if (categoryRepository.existsByNameAndUserId(request.getName(), request.getUserId())) {
+    public CategoryResponse create(CategoryRequest request, UUID userId) {
+        if (categoryRepository.existsByNameAndUserId(request.getName(), userId)) {
             throw new BusinessException("Category with name '" + request.getName() + "' already exists");
         }
 
@@ -28,18 +28,18 @@ public class CategoryService {
                 .name(request.getName())
                 .description(request.getDescription())
                 .color(request.getColor())
-                .userId(request.getUserId())
+                .userId(userId)
                 .build();
 
         return toResponse(categoryRepository.save(category));
     }
 
-    public CategoryResponse update(UUID id, CategoryRequest request) {
+    public CategoryResponse update(UUID id, CategoryRequest request, UUID userId) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Category not found"));
 
         if (!category.getName().equals(request.getName()) &&
-                categoryRepository.existsByNameAndUserId(request.getName(), request.getUserId())) {
+                categoryRepository.existsByNameAndUserId(request.getName(), userId)) {
             throw new BusinessException("Category with name '" + request.getName() + "' already exists");
         }
 

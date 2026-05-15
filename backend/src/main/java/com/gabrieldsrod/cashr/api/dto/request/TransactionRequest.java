@@ -16,9 +16,6 @@ import java.util.UUID;
 public class TransactionRequest {
 
     @NotNull
-    private UUID userId;
-
-    @NotNull
     private TransactionType type;
 
     @NotNull

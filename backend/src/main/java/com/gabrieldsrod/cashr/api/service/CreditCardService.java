@@ -10,7 +10,6 @@ import com.gabrieldsrod.cashr.api.model.*;
 import com.gabrieldsrod.cashr.api.repository.AccountRepository;
 import com.gabrieldsrod.cashr.api.repository.CreditCardRepository;
 import com.gabrieldsrod.cashr.api.repository.TransactionRepository;
-import com.gabrieldsrod.cashr.api.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -26,11 +25,9 @@ public class CreditCardService {
 
     private final CreditCardRepository creditCardRepository;
     private final TransactionRepository transactionRepository;
-    private final UserRepository userRepository;
     private final AccountRepository accountRepository;
 
-    public CreditCardResponse create(CreditCardRequest request) {
-        User user = findUser(request.getUserId());
+    public CreditCardResponse create(CreditCardRequest request, User user) {
         Account account = findAccount(request.getAccountId());
 
         if (creditCardRepository.existsByNameAndUserId(request.getName(), user.getId())) {
@@ -60,9 +57,8 @@ public class CreditCardService {
                 .toList();
     }
 
-    public CreditCardResponse update(UUID id, CreditCardRequest request) {
+    public CreditCardResponse update(UUID id, CreditCardRequest request, User user) {
         CreditCard creditCard = findCreditCard(id);
-        User user = findUser(request.getUserId());
         Account account = findAccount(request.getAccountId());
 
         boolean nameChanged = !creditCard.getName().equals(request.getName());
@@ -119,11 +115,6 @@ public class CreditCardService {
     private CreditCard findCreditCard(UUID id) {
         return creditCardRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("Credit card not found"));
-    }
-
-    private User findUser(UUID userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException("User not found"));
     }
 
     private Account findAccount(UUID accountId) {

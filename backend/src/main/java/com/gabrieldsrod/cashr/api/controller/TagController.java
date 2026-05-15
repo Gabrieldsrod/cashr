@@ -2,11 +2,13 @@ package com.gabrieldsrod.cashr.api.controller;
 
 import com.gabrieldsrod.cashr.api.dto.request.TagRequest;
 import com.gabrieldsrod.cashr.api.dto.response.TagResponse;
+import com.gabrieldsrod.cashr.api.model.User;
 import com.gabrieldsrod.cashr.api.service.TagService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,13 +22,15 @@ public class TagController {
     private final TagService tagService;
 
     @GetMapping
-    public ResponseEntity<List<TagResponse>> findAll(@RequestParam UUID userId) {
-        return ResponseEntity.ok(tagService.findAll(userId));
+    public ResponseEntity<List<TagResponse>> findAll(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(tagService.findAll(user.getId()));
     }
 
     @PostMapping
-    public ResponseEntity<TagResponse> create(@Valid @RequestBody TagRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(tagService.create(request));
+    public ResponseEntity<TagResponse> create(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody TagRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(tagService.create(request, user.getId()));
     }
 
     @DeleteMapping("/{id}")
