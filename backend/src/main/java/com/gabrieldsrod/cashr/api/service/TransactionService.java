@@ -89,6 +89,55 @@ public class TransactionService {
         return toResponse(transaction);
     }
 
+    public TransactionResponse update(UUID id, TransactionRequest request, UUID userId) {
+        if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Amount must be positive");
+        }
+
+        Transaction transaction = transactionRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Transação não encontrada"));
+
+        Account account = accountRepository.findByIdAndUserId(request.getAccountId(), userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Conta não encontrada"));
+
+        Category category = null;
+        if (request.getCategoryId() != null) {
+            category = categoryRepository.findById(request.getCategoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+        }
+
+        CreditCard creditCard = null;
+        LocalDate invoiceDate = null;
+        if (PaymentMethod.CREDIT_CARD.equals(request.getPaymentMethod())) {
+            if (request.getCreditCardId() == null) {
+                throw new BusinessException("creditCardId is required for credit card transactions");
+            }
+            creditCard = creditCardRepository.findById(request.getCreditCardId())
+                    .orElseThrow(() -> new BusinessException("Credit card not found"));
+            invoiceDate = calculateInvoiceDate(request.getCompetenceDate(), creditCard);
+        }
+
+        transaction.setType(request.getType());
+        transaction.setStatus(request.getStatus());
+        transaction.setCurrency(request.getCurrency());
+        transaction.setAmount(request.getAmount());
+        transaction.setCompetenceDate(request.getCompetenceDate());
+        transaction.setDescription(request.getDescription());
+        transaction.setAccount(account);
+        transaction.setCategory(category);
+        transaction.setPaymentMethod(request.getPaymentMethod());
+        transaction.setCreditCard(creditCard);
+        transaction.setInvoiceDate(invoiceDate);
+
+        return toResponse(transactionRepository.save(transaction));
+    }
+
+    public void delete(UUID id, UUID userId) {
+        Transaction transaction = transactionRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Transação não encontrada"));
+        transactionRepository.delete(transaction);
+    }
+
     public Page<TransactionResponse> findAll(UUID userId, TransactionType type, TransactionStatus status, Integer year, Integer month, Pageable pageable) {
         LocalDate start = null;
         LocalDate end = null;
@@ -212,9 +261,13 @@ public class TransactionService {
                     .build();
         }
 
+        Account txAccount = transaction.getAccount();
+
         return TransactionResponse.builder()
                 .id(transaction.getId())
                 .userId(transaction.getUserId())
+                .accountId(txAccount != null ? txAccount.getId() : null)
+                .accountName(txAccount != null ? txAccount.getName() : null)
                 .type(transaction.getType())
                 .status(transaction.getStatus())
                 .currency(transaction.getCurrency())

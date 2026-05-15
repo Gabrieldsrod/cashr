@@ -19,6 +19,8 @@ public class TransactionResponse {
 
     private UUID id;
     private UUID userId;
+    private UUID accountId;
+    private String accountName;
     private TransactionType type;
     private TransactionStatus status;
     private Currency currency;

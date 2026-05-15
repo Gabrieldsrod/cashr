@@ -174,4 +174,66 @@ class TransactionServiceTest {
                 () -> transactionService.create(buildRequest(accountId), USER_B));
         verify(transactionRepository, never()).save(any());
     }
+
+    // ── update / delete: isolamento por usuário ───────────────────────────────
+
+    @Test
+    void update_throwsWhenTransactionBelongsToAnotherUser() {
+        UUID transactionId = UUID.randomUUID();
+        UUID accountId = UUID.randomUUID();
+        when(transactionRepository.findByIdAndUserId(transactionId, USER_B)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> transactionService.update(transactionId, buildRequest(accountId), USER_B));
+        verify(transactionRepository, never()).save(any());
+    }
+
+    @Test
+    void update_persistsChangesOnExistingTransaction() {
+        UUID transactionId = UUID.randomUUID();
+        UUID accountId = UUID.randomUUID();
+        Account account = buildAccount(accountId, USER_A);
+        Transaction existing = Transaction.builder()
+                .id(transactionId)
+                .userId(USER_A)
+                .type(TransactionType.EXPENSE)
+                .status(TransactionStatus.PENDING)
+                .amount(new BigDecimal("50.00"))
+                .competenceDate(LocalDate.of(2026, 4, 1))
+                .currency(Currency.BRL)
+                .build();
+        when(transactionRepository.findByIdAndUserId(transactionId, USER_A)).thenReturn(Optional.of(existing));
+        when(accountRepository.findByIdAndUserId(accountId, USER_A)).thenReturn(Optional.of(account));
+        when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        transactionService.update(transactionId, buildRequest(accountId), USER_A);
+
+        ArgumentCaptor<Transaction> captor = ArgumentCaptor.forClass(Transaction.class);
+        verify(transactionRepository).save(captor.capture());
+        Transaction saved = captor.getValue();
+        assertEquals(new BigDecimal("100.00"), saved.getAmount());
+        assertEquals(TransactionStatus.PAID, saved.getStatus());
+        assertSame(account, saved.getAccount());
+    }
+
+    @Test
+    void delete_throwsWhenTransactionBelongsToAnotherUser() {
+        UUID transactionId = UUID.randomUUID();
+        when(transactionRepository.findByIdAndUserId(transactionId, USER_B)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> transactionService.delete(transactionId, USER_B));
+        verify(transactionRepository, never()).delete(any());
+    }
+
+    @Test
+    void delete_removesTransactionWhenOwned() {
+        UUID transactionId = UUID.randomUUID();
+        Transaction existing = Transaction.builder().id(transactionId).userId(USER_A).build();
+        when(transactionRepository.findByIdAndUserId(transactionId, USER_A)).thenReturn(Optional.of(existing));
+
+        transactionService.delete(transactionId, USER_A);
+
+        verify(transactionRepository).delete(existing);
+    }
 }

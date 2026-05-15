@@ -72,6 +72,22 @@ public class TransactionController {
         return ResponseEntity.status(HttpStatus.CREATED).body(transactionService.createInstallments(request, user.getId()));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<TransactionResponse> update(
+            @AuthenticationPrincipal User user,
+            @PathVariable UUID id,
+            @Valid @RequestBody TransactionRequest request) {
+        return ResponseEntity.ok(transactionService.update(id, request, user.getId()));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(
+            @AuthenticationPrincipal User user,
+            @PathVariable UUID id) {
+        transactionService.delete(id, user.getId());
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/balance")
     public ResponseEntity<BigDecimal> getMonthlyBalance(
             @AuthenticationPrincipal User user,
