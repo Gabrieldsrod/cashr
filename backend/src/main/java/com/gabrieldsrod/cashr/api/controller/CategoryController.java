@@ -27,8 +27,8 @@ public class CategoryController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<CategoryResponse> findById(@PathVariable UUID id) {
-        return ResponseEntity.ok(categoryService.findById(id));
+    public ResponseEntity<CategoryResponse> findById(@PathVariable UUID id, @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(categoryService.findById(id, user.getId()));
     }
 
     @PostMapping
@@ -47,8 +47,8 @@ public class CategoryController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        categoryService.delete(id);
+    public ResponseEntity<Void> delete(@PathVariable UUID id, @AuthenticationPrincipal User user) {
+        categoryService.delete(id, user.getId());
         return ResponseEntity.noContent().build();
     }
 }

@@ -35,7 +35,7 @@ public class CategoryService {
     }
 
     public CategoryResponse update(UUID id, CategoryRequest request, UUID userId) {
-        Category category = categoryRepository.findById(id)
+        Category category = categoryRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new RuntimeException("Category not found"));
 
         if (!category.getName().equals(request.getName()) &&
@@ -56,14 +56,17 @@ public class CategoryService {
                 .toList();
     }
 
-    public CategoryResponse findById(UUID id) {
-        Category category = categoryRepository.findById(id)
+    public CategoryResponse findById(UUID id, UUID userId) {
+        Category category = categoryRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new RuntimeException("Category not found"));
 
         return toResponse(category);
     }
 
-    public void delete(UUID id) {
+    public void delete(UUID id, UUID userId) {
+        categoryRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+
         if (transactionRepository.existsByCategoryId(id)) {
             throw new BusinessException("Cannot delete category with existing transactions");
         }
