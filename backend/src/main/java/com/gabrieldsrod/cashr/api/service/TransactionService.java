@@ -1,5 +1,6 @@
 package com.gabrieldsrod.cashr.api.service;
 
+import com.gabrieldsrod.cashr.api.dto.request.InstallmentGroupUpdateRequest;
 import com.gabrieldsrod.cashr.api.dto.request.InstallmentRequest;
 import com.gabrieldsrod.cashr.api.dto.request.TransactionRequest;
 import com.gabrieldsrod.cashr.api.dto.response.CategoryResponse;
@@ -97,6 +98,10 @@ public class TransactionService {
         Transaction transaction = transactionRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Transação não encontrada"));
 
+        if (transaction.getPaymentMethod() != request.getPaymentMethod()) {
+            throw new BusinessException("paymentMethod cannot be changed; delete and recreate the transaction");
+        }
+
         Account account = accountRepository.findByIdAndUserId(request.getAccountId(), userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Conta não encontrada"));
 
@@ -136,6 +141,52 @@ public class TransactionService {
         Transaction transaction = transactionRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Transação não encontrada"));
         transactionRepository.delete(transaction);
+    }
+
+    public List<TransactionResponse> updateInstallmentGroup(UUID groupId, InstallmentGroupUpdateRequest request, UUID userId) {
+        if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Amount must be positive");
+        }
+
+        List<Transaction> transactions = transactionRepository.findByInstallmentGroupIdAndUserIdOrderByInstallmentNumberAsc(groupId, userId);
+        if (transactions.isEmpty()) {
+            throw new ResourceNotFoundException("Grupo de parcelas não encontrado");
+        }
+
+        if (transactions.get(0).getPaymentMethod() != request.getPaymentMethod()) {
+            throw new BusinessException("paymentMethod cannot be changed; delete and recreate the installment group");
+        }
+
+        Account account = accountRepository.findByIdAndUserId(request.getAccountId(), userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Conta não encontrada"));
+
+        Category category = categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+
+        CreditCard creditCard = null;
+        if (PaymentMethod.CREDIT_CARD.equals(request.getPaymentMethod())) {
+            if (request.getCreditCardId() == null) {
+                throw new BusinessException("creditCardId is required for credit card transactions");
+            }
+            creditCard = creditCardRepository.findById(request.getCreditCardId())
+                    .orElseThrow(() -> new BusinessException("Credit card not found"));
+        }
+
+        for (Transaction tx : transactions) {
+            tx.setType(request.getType());
+            tx.setStatus(request.getStatus());
+            tx.setCurrency(request.getCurrency());
+            tx.setAmount(request.getAmount());
+            tx.setDescription(request.getDescription());
+            tx.setAccount(account);
+            tx.setCategory(category);
+            tx.setCreditCard(creditCard);
+            tx.setInvoiceDate(creditCard != null ? calculateInvoiceDate(tx.getCompetenceDate(), creditCard) : null);
+        }
+
+        return transactionRepository.saveAll(transactions).stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     public Page<TransactionResponse> findAll(UUID userId, TransactionType type, TransactionStatus status, Integer year, Integer month, Pageable pageable) {

@@ -1,10 +1,14 @@
 package com.gabrieldsrod.cashr.api.service;
 
+import com.gabrieldsrod.cashr.api.dto.request.InstallmentGroupUpdateRequest;
 import com.gabrieldsrod.cashr.api.dto.request.TransactionRequest;
+import com.gabrieldsrod.cashr.api.exception.BusinessException;
 import com.gabrieldsrod.cashr.api.exception.ResourceNotFoundException;
 import com.gabrieldsrod.cashr.api.model.Account;
 import com.gabrieldsrod.cashr.api.model.AccountType;
+import com.gabrieldsrod.cashr.api.model.Category;
 import com.gabrieldsrod.cashr.api.model.Currency;
+import com.gabrieldsrod.cashr.api.model.PaymentMethod;
 import com.gabrieldsrod.cashr.api.model.Transaction;
 import com.gabrieldsrod.cashr.api.model.TransactionStatus;
 import com.gabrieldsrod.cashr.api.model.TransactionType;
@@ -235,5 +239,97 @@ class TransactionServiceTest {
         transactionService.delete(transactionId, USER_A);
 
         verify(transactionRepository).delete(existing);
+    }
+
+    // ── update: paymentMethod imutável ────────────────────────────────────────
+
+    @Test
+    void update_throwsWhenPaymentMethodChanges() {
+        UUID transactionId = UUID.randomUUID();
+        UUID accountId = UUID.randomUUID();
+        Transaction existing = Transaction.builder()
+                .id(transactionId)
+                .userId(USER_A)
+                .paymentMethod(PaymentMethod.CREDIT_CARD)
+                .build();
+        when(transactionRepository.findByIdAndUserId(transactionId, USER_A)).thenReturn(Optional.of(existing));
+
+        TransactionRequest request = buildRequest(accountId);
+        request.setPaymentMethod(PaymentMethod.PIX);
+
+        assertThrows(BusinessException.class,
+                () -> transactionService.update(transactionId, request, USER_A));
+        verify(transactionRepository, never()).save(any());
+    }
+
+    // ── updateInstallmentGroup ────────────────────────────────────────────────
+
+    private InstallmentGroupUpdateRequest buildGroupRequest(UUID accountId, UUID categoryId, PaymentMethod paymentMethod) {
+        InstallmentGroupUpdateRequest request = new InstallmentGroupUpdateRequest();
+        request.setType(TransactionType.EXPENSE);
+        request.setStatus(TransactionStatus.PAID);
+        request.setCurrency(Currency.BRL);
+        request.setAmount(new BigDecimal("100.00"));
+        request.setAccountId(accountId);
+        request.setCategoryId(categoryId);
+        request.setPaymentMethod(paymentMethod);
+        return request;
+    }
+
+    @Test
+    void updateInstallmentGroup_throwsWhenGroupBelongsToAnotherUser() {
+        UUID groupId = UUID.randomUUID();
+        when(transactionRepository.findByInstallmentGroupIdAndUserIdOrderByInstallmentNumberAsc(groupId, USER_B))
+                .thenReturn(List.of());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> transactionService.updateInstallmentGroup(groupId, buildGroupRequest(UUID.randomUUID(), UUID.randomUUID(), null), USER_B));
+        verify(transactionRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void updateInstallmentGroup_throwsWhenPaymentMethodChanges() {
+        UUID groupId = UUID.randomUUID();
+        Transaction parcel = Transaction.builder()
+                .userId(USER_A)
+                .paymentMethod(PaymentMethod.CREDIT_CARD)
+                .build();
+        when(transactionRepository.findByInstallmentGroupIdAndUserIdOrderByInstallmentNumberAsc(groupId, USER_A))
+                .thenReturn(List.of(parcel));
+
+        InstallmentGroupUpdateRequest request = buildGroupRequest(UUID.randomUUID(), UUID.randomUUID(), PaymentMethod.PIX);
+
+        assertThrows(BusinessException.class,
+                () -> transactionService.updateInstallmentGroup(groupId, request, USER_A));
+        verify(transactionRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void updateInstallmentGroup_appliesChangesToAllParcels() {
+        UUID groupId = UUID.randomUUID();
+        UUID accountId = UUID.randomUUID();
+        UUID categoryId = UUID.randomUUID();
+        Account account = buildAccount(accountId, USER_A);
+        Category category = Category.builder().id(categoryId).build();
+
+        Transaction p1 = Transaction.builder().userId(USER_A).amount(new BigDecimal("33.33"))
+                .competenceDate(LocalDate.of(2026, 5, 1)).installmentNumber(1).build();
+        Transaction p2 = Transaction.builder().userId(USER_A).amount(new BigDecimal("33.33"))
+                .competenceDate(LocalDate.of(2026, 6, 1)).installmentNumber(2).build();
+
+        when(transactionRepository.findByInstallmentGroupIdAndUserIdOrderByInstallmentNumberAsc(groupId, USER_A))
+                .thenReturn(List.of(p1, p2));
+        when(accountRepository.findByIdAndUserId(accountId, USER_A)).thenReturn(Optional.of(account));
+        when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(category));
+        when(transactionRepository.saveAll(any(List.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        transactionService.updateInstallmentGroup(groupId, buildGroupRequest(accountId, categoryId, null), USER_A);
+
+        assertEquals(new BigDecimal("100.00"), p1.getAmount());
+        assertEquals(new BigDecimal("100.00"), p2.getAmount());
+        assertSame(account, p1.getAccount());
+        assertSame(account, p2.getAccount());
+        assertEquals(LocalDate.of(2026, 5, 1), p1.getCompetenceDate());
+        assertEquals(LocalDate.of(2026, 6, 1), p2.getCompetenceDate());
     }
 }

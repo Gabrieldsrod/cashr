@@ -1,5 +1,6 @@
 package com.gabrieldsrod.cashr.api.controller;
 
+import com.gabrieldsrod.cashr.api.dto.request.InstallmentGroupUpdateRequest;
 import com.gabrieldsrod.cashr.api.dto.request.InstallmentRequest;
 import com.gabrieldsrod.cashr.api.dto.request.TransactionRequest;
 import com.gabrieldsrod.cashr.api.dto.response.TransactionResponse;
@@ -86,6 +87,14 @@ public class TransactionController {
             @PathVariable UUID id) {
         transactionService.delete(id, user.getId());
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/installment-group/{groupId}")
+    public ResponseEntity<List<TransactionResponse>> updateInstallmentGroup(
+            @AuthenticationPrincipal User user,
+            @PathVariable UUID groupId,
+            @Valid @RequestBody InstallmentGroupUpdateRequest request) {
+        return ResponseEntity.ok(transactionService.updateInstallmentGroup(groupId, request, user.getId()));
     }
 
     @GetMapping("/balance")
