@@ -12,7 +12,7 @@ import javax.crypto.SecretKey;
 @Service
 public class JwtTokenProvider {
 
-    @Value("${jwt.secret:your-very-long-secret-key-min-32-chars-never-share-this}")
+    @Value("${jwt.secret}")
     private String jwtSecret;
 
     @Value("${jwt.expiration:86400000}")
