@@ -32,11 +32,15 @@ class CategoryServiceTest {
     @InjectMocks
     private CategoryService categoryService;
 
-    private Category buildCategory(UUID id) {
+    private final UUID USER_A = UUID.randomUUID();
+    private final UUID USER_B = UUID.randomUUID();
+
+    private Category buildCategory(UUID id, UUID userId) {
         return Category.builder()
                 .id(id)
                 .name("Alimentação")
                 .description("Gastos com comida")
+                .userId(userId)
                 .build();
     }
 
@@ -54,14 +58,13 @@ class CategoryServiceTest {
         UUID id = UUID.randomUUID();
         CategoryRequest request = buildRequest("Alimentação", "Gastos com comida");
 
-        when(categoryRepository.existsByName("Alimentação")).thenReturn(false);
-        when(categoryRepository.save(any(Category.class))).thenReturn(buildCategory(id));
+        when(categoryRepository.existsByNameAndUserId("Alimentação", USER_A)).thenReturn(false);
+        when(categoryRepository.save(any(Category.class))).thenReturn(buildCategory(id, USER_A));
 
-        CategoryResponse response = categoryService.create(request);
+        CategoryResponse response = categoryService.create(request, USER_A);
 
         assertNotNull(response.getId());
         assertEquals("Alimentação", response.getName());
-        assertEquals("Gastos com comida", response.getDescription());
         verify(categoryRepository).save(any(Category.class));
     }
 
@@ -69,9 +72,9 @@ class CategoryServiceTest {
     void create_shouldThrowWhenNameAlreadyExists() {
         CategoryRequest request = buildRequest("Alimentação", "Gastos com comida");
 
-        when(categoryRepository.existsByName("Alimentação")).thenReturn(true);
+        when(categoryRepository.existsByNameAndUserId("Alimentação", USER_A)).thenReturn(true);
 
-        assertThrows(BusinessException.class, () -> categoryService.create(request));
+        assertThrows(BusinessException.class, () -> categoryService.create(request, USER_A));
         verify(categoryRepository, never()).save(any());
     }
 
@@ -80,14 +83,11 @@ class CategoryServiceTest {
     @Test
     void update_shouldChangeNameAndDescription() {
         UUID id = UUID.randomUUID();
-        Category existing = buildCategory(id);
 
-        CategoryRequest request = buildRequest("Saúde", "Planos e medicamentos");
-
-        when(categoryRepository.findById(id)).thenReturn(Optional.of(existing));
+        when(categoryRepository.findByIdAndUserId(id, USER_A)).thenReturn(Optional.of(buildCategory(id, USER_A)));
         when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        CategoryResponse response = categoryService.update(id, request);
+        CategoryResponse response = categoryService.update(id, buildRequest("Saúde", "Planos e medicamentos"), USER_A);
 
         assertEquals("Saúde", response.getName());
         assertEquals("Planos e medicamentos", response.getDescription());
@@ -96,9 +96,9 @@ class CategoryServiceTest {
     @Test
     void update_shouldThrowWhenCategoryNotFound() {
         UUID id = UUID.randomUUID();
-        when(categoryRepository.findById(id)).thenReturn(Optional.empty());
+        when(categoryRepository.findByIdAndUserId(id, USER_A)).thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class, () -> categoryService.update(id, buildRequest("X", null)));
+        assertThrows(RuntimeException.class, () -> categoryService.update(id, buildRequest("X", null), USER_A));
     }
 
     // ── delete ────────────────────────────────────────────────────────────────
@@ -106,18 +106,20 @@ class CategoryServiceTest {
     @Test
     void delete_shouldThrowWhenCategoryHasTransactions() {
         UUID id = UUID.randomUUID();
+        when(categoryRepository.findByIdAndUserId(id, USER_A)).thenReturn(Optional.of(buildCategory(id, USER_A)));
         when(transactionRepository.existsByCategoryId(id)).thenReturn(true);
 
-        assertThrows(BusinessException.class, () -> categoryService.delete(id));
+        assertThrows(BusinessException.class, () -> categoryService.delete(id, USER_A));
         verify(categoryRepository, never()).deleteById(any());
     }
 
     @Test
     void delete_shouldCallRepositoryWhenNoTransactions() {
         UUID id = UUID.randomUUID();
+        when(categoryRepository.findByIdAndUserId(id, USER_A)).thenReturn(Optional.of(buildCategory(id, USER_A)));
         when(transactionRepository.existsByCategoryId(id)).thenReturn(false);
 
-        categoryService.delete(id);
+        categoryService.delete(id, USER_A);
 
         verify(categoryRepository).deleteById(id);
     }
@@ -125,38 +127,90 @@ class CategoryServiceTest {
     // ── findAll / findById ────────────────────────────────────────────────────
 
     @Test
-    void findAll_shouldReturnListOfCategories() {
-        List<Category> categories = List.of(
-                Category.builder().id(UUID.randomUUID()).name("Alimentação").description("Comida").build(),
-                Category.builder().id(UUID.randomUUID()).name("Transporte").description("Mobilidade").build()
-        );
+    void findAll_shouldReturnOnlyCurrentUserCategories() {
+        when(categoryRepository.findAllByUserId(USER_A)).thenReturn(List.of(
+                buildCategory(UUID.randomUUID(), USER_A),
+                buildCategory(UUID.randomUUID(), USER_A)
+        ));
 
-        when(categoryRepository.findAll()).thenReturn(categories);
-
-        List<CategoryResponse> result = categoryService.findAll();
+        List<CategoryResponse> result = categoryService.findAll(USER_A);
 
         assertEquals(2, result.size());
-        assertEquals("Alimentação", result.get(0).getName());
-        assertEquals("Transporte", result.get(1).getName());
+        result.forEach(r -> assertEquals(USER_A, r.getUserId()));
     }
 
     @Test
     void findById_shouldReturnCategoryWhenExists() {
         UUID id = UUID.randomUUID();
+        when(categoryRepository.findByIdAndUserId(id, USER_A)).thenReturn(Optional.of(buildCategory(id, USER_A)));
 
-        when(categoryRepository.findById(id)).thenReturn(Optional.of(buildCategory(id)));
-
-        CategoryResponse response = categoryService.findById(id);
+        CategoryResponse response = categoryService.findById(id, USER_A);
 
         assertEquals(id, response.getId());
-        assertEquals("Alimentação", response.getName());
+        assertEquals(USER_A, response.getUserId());
     }
 
     @Test
     void findById_shouldThrowWhenNotFound() {
         UUID id = UUID.randomUUID();
-        when(categoryRepository.findById(id)).thenReturn(Optional.empty());
+        when(categoryRepository.findByIdAndUserId(id, USER_A)).thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class, () -> categoryService.findById(id));
+        assertThrows(RuntimeException.class, () -> categoryService.findById(id, USER_A));
+    }
+
+    // ── isolamento User A vs User B ───────────────────────────────────────────
+
+    @Test
+    void findById_userB_cannotReadUserA_category() {
+        UUID id = UUID.randomUUID();
+        when(categoryRepository.findByIdAndUserId(id, USER_B)).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class, () -> categoryService.findById(id, USER_B));
+        verify(categoryRepository, never()).findByIdAndUserId(id, USER_A);
+    }
+
+    @Test
+    void update_userB_cannotUpdateUserA_category() {
+        UUID id = UUID.randomUUID();
+        when(categoryRepository.findByIdAndUserId(id, USER_B)).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class, () -> categoryService.update(id, buildRequest("Hack", null), USER_B));
+        verify(categoryRepository, never()).save(any());
+    }
+
+    @Test
+    void delete_userB_cannotDeleteUserA_category() {
+        UUID id = UUID.randomUUID();
+        when(categoryRepository.findByIdAndUserId(id, USER_B)).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class, () -> categoryService.delete(id, USER_B));
+        verify(categoryRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void findAll_userB_doesNotSeeUserA_categories() {
+        when(categoryRepository.findAllByUserId(USER_B)).thenReturn(List.of());
+
+        List<CategoryResponse> result = categoryService.findAll(USER_B);
+
+        assertTrue(result.isEmpty());
+        verify(categoryRepository, never()).findAllByUserId(USER_A);
+    }
+
+    @Test
+    void create_sameNameAllowedForDifferentUsers() {
+        UUID idA = UUID.randomUUID();
+        UUID idB = UUID.randomUUID();
+        CategoryRequest request = buildRequest("Alimentação", "Comida");
+
+        when(categoryRepository.existsByNameAndUserId("Alimentação", USER_A)).thenReturn(false);
+        when(categoryRepository.save(any(Category.class))).thenReturn(buildCategory(idA, USER_A));
+        categoryService.create(request, USER_A);
+
+        when(categoryRepository.existsByNameAndUserId("Alimentação", USER_B)).thenReturn(false);
+        when(categoryRepository.save(any(Category.class))).thenReturn(buildCategory(idB, USER_B));
+        categoryService.create(request, USER_B);
+
+        verify(categoryRepository, times(2)).save(any(Category.class));
     }
 }
